@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>결과예시</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background-image:url("/images/mainpage.png");
+        }
+
+        .navbar {
+            background-color: black;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+        }
+
+        .nav-items {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .hamburger {
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .main-content {
+            height: calc(100vh - 60px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .result {
+            display: flex;
+            justify-content: center;
+        }
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            font-size: 20px;
+            animation: fall linear infinite;
+            z-index: 9999;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <div class="nav-items">
+        <div class="hamburger" onclick="handleHamburgerClick()">&#9776;</div>
+        <div id="nav-links">
+            <!-- Spring Security를 사용한 조건부 네비게이션 -->
+            <div sec:authorize="isAuthenticated()">
+                <a class="nav-link" th:href="@{/logout}">로그아웃</a>
+                <a class="nav-link" th:href="@{/upload}">사진 업로드</a>
+            </div>
+            <div sec:authorize="!isAuthenticated()">
+                <a class="nav-link" th:href="@{/login}">로그인</a>
+                <a class="nav-link" th:href="@{/signup}">회원가입</a>
+                <a class="nav-link" th:href="@{/upload}">사진 업로드</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="result">
+        <img src=/images/examimage.png alt="result" />
+    </div>
+    <button>
+        <a th:href="@{/upload}">돌아가기</a>
+    </button>
+</div>
+
+<script>
+    // Spring Security 사용으로 인해 로그인 상태 관리 코드 제거
+    // 햄버거 메뉴 클릭 핸들러
+    function handleHamburgerClick() {
+        // Spring Security를 통해 인증 상태 확인
+        const isAuthenticated = /*[[${#authorization.expression('isAuthenticated()')}]]*/ false;
+
+        if (!isAuthenticated) {
+            window.location.href = '/';  // 메인 페이지로 이동
+        }
+        // 로그인되어 있으면 아무 동작 안함
+    }
+    function logout() {
+        // 서버에 로그아웃 요청을 보내는 것이 좋습니다
+        fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).then(response => {
+            if (response.ok) {
+                sessionStorage.removeItem('isLoggedIn');
+                sessionStorage.removeItem('username');
+                updateUI();
+                alert('로그아웃되었습니다.');
+            }
+        });
+    }
+
+    // 로그아웃 링크 클릭 이벤트
+    document.getElementById('logoutLink').onclick = logout;
+
+    // 모달 바깥 클릭 시 닫기
+    window.onclick = function(event) {
+        const modal = document.getElementById('loginModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
+    // 눈송이 효과
+    const colors = ["#FFB6C1", "#FF69B4", "#87CEEB", "#8A2BE2", "#7FFFD4", "#FFD700", "#FFA07A"];
+    const symbols = ["❄", "♥", "✿", "★"];
+    function createSnowflake() {
+        const snowflake = document.createElement("div");
+        snowflake.classList.add("snowflake");
+        snowflake.style.left = Math.random() * window.innerWidth + "px";
+        snowflake.style.animationDuration = (3 + Math.random() * 5) + "s";
+        snowflake.style.color = colors[Math.floor(Math.random() * colors.length)];
+        snowflake.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        document.body.appendChild(snowflake);
+        setTimeout(() => {
+            snowflake.remove();
+        }, 8000);
+    }
+    setInterval(createSnowflake, 300);
+</script>
+</body>
+</html>

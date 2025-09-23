@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title>퍼스널 컬러 분석</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-image:url("/images/mainpage.png");
+      margin: 0;
+      flex-direction: column;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #000000;
+      color: #fff;
+      padding: 10px 20px;
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      box-sizing: border-box;
+    }
+
+    .nav-items {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .hamburger {
+      font-size: 20px;
+      cursor: pointer;
+      color: white;
+      padding-left: 20px;
+    }
+
+    .nav-link {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .nav-link.disabled {
+      color: #666;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 700px;
+      width: 90%;
+      margin-top: 80px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .upload-section {
+      margin-bottom: 20px;
+    }
+
+    .upload-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    input[type="file"] {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .webcam-button {
+      background-color: #2196F3;
+    }
+
+    .webcam-button:hover {
+      background-color: #1976D2;
+    }
+
+    .capture-button {
+      background-color: #FF9800;
+    }
+
+    .capture-button:hover {
+      background-color: #F57C00;
+    }
+
+    /* 영상과 이미지 겹치기 스타일 */
+    .video-container {
+      position: relative;
+      width: 100%;
+      max-width: 640px;
+      height: 480px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin: 20px auto;
+      overflow: hidden;
+    }
+
+    .video-container video,
+    .video-container img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #webcamVideo {
+      z-index: 1;
+    }
+
+    #contour-image {
+      z-index: 10;
+      opacity: 0.35;
+      pointer-events: none;
+      /*color: #c41da7*/
+      width: 100%;
+      height: 100%;
+
+    }
+
+    .webcam-container {
+      margin: 20px 0;
+      display: none;
+    }
+
+    #capturedCanvas {
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .preview-container {
+      margin: 20px 0;
+    }
+
+    .preview-image {
+      max-width: 300px;
+      max-height: 300px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+
+    .loading {
+      margin-top: 20px;
+      color: #666;
+      font-style: italic;
+    }
+
+    .color-swatch {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border: 1px solid #ccc;
+      border-radius: 50%;
+      margin: 0 5px;
+      vertical-align: middle;
+    }
+
+    .contour-controls {
+      margin: 10px 0;
+    }
+
+    .contour-controls label {
+      display: inline-block;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+
+    .contour-controls input[type="range"] {
+      width: 150px;
+      margin: 0 10px;
+    }
+
+    .login-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+  </style>
+
+</head>
+<body>
+<div class="navbar">
+  <div class="nav-items">
+    <div class="hamburger" onclick="window.location.href='/menu'">&#9776;</div>
+    <a class="nav-link" th:href="@{/login}" id="loginLink">로그인</a>
+    <a class="nav-link" th:href="@{/signup}">회원가입</a>
+    <a class="nav-link" href="#" id="uploadLink">사진 업로드</a>
+    <a class="nav-link" href="#" id="logoutLink" style="display: none;">로그아웃</a>
+  </div>
+</div>
+
+<div class="container">
+  <h1>퍼스널 컬러 분석기</h1>
+  <p>얼굴과 상의가 포함된 사진을 업로드해주세요.(jpg,png)</p>
+  <div class="upload-section">
+    <div class="upload-buttons">
+      <button id="webcamBtn" type="button" class="webcam-button">웹캠으로 촬영</button>
+      <button id="fileBtn" type="button">파일에서 선택</button>
+    </div>
+
+    <!-- 숨겨진 파일 입력 -->
+    <input type="file" id="camInput" accept="image/*" capture="environment" style="display:none;">
+    <input type="file" id="imageInput" accept="image/*" style="display:none;">
+
+    <!-- 웹캠 컨테이너 -->
+    <div class="webcam-container" id="webcamContainer">
+      <div class="video-container">
+        <video id="webcamVideo" autoplay playsinline></video>
+        <img id="contour-image" src="/images/pngwing.com.png" alt="윤곽선 Image">
+      </div>
+      <br>
+      <button id="captureBtn" type="button" class="capture-button">사진 촬영</button>
+      <button id="closeWebcamBtn" type="button">웹캠 닫기</button>
+      <canvas id="capturedCanvas" style="display:none;"></canvas>
+    </div>
+
+    <!-- 미리보기 컨테이너 -->
+    <div class="preview-container" id="previewContainer" style="display:none;">
+      <p>선택된 이미지:</p>
+      <img id="previewImage" class="preview-image" alt="미리보기">
+    </div>
+
+    <button id="analyzeBtn" type="button" style="display:none;">사진 분석</button>
+  </div>
+
+  <div id="loading" style="display:none;">분석 중...</div>
+  <div id="result"></div>
+</div>
+
+<script>
+  let currentStream = null;
+  let capturedImageFile = null;
+
+  // 로그인 상태 확인 함수
+  function isLoggedIn() {
+    return sessionStorage.getItem('isLoggedIn') === 'true';
+  }
+
+  // 페이지 로드 시 UI 업데이트
+  function updateUI() {
+    const loginLink = document.getElementById('loginLink');
+    const signupLink = document.querySelector('a[href="/signup"]');
+    const uploadLink = document.getElementById('uploadLink');
+    const logoutLink = document.getElementById('logoutLink');
+
+    if (isLoggedIn()) {
+      loginLink.style.display = 'none';
+      logoutLink.style.display = 'block';
+      signupLink.style.display = 'none';
+      uploadLink.classList.remove('disabled');
+      uploadLink.onclick = function() {
+        window.location.href = '/upload';
+      };
+    } else {
+      loginLink.style.display = 'block';
+      signupLink.style.display = 'block';
+      logoutLink.style.display = 'none';
+      uploadLink.classList.add('disabled');
+      uploadLink.onclick = function(e) {
+        e.preventDefault();
+        showLoginModal();
+      };
+    }
+  }
+
+  // 로그인 모달 표시
+  function showLoginModal() {
+    if (document.getElementById('loginModal')) {
+      document.getElementById('loginModal').style.display = 'block';
+    }
+  }
+
+  // 웹캠 시작
+  async function startWebcam() {
+    try {
+      const constraints = {
+        video: {
+          facingMode: 'user', // 전면 카메라 우선
+          width: { ideal: 500 },
+          height: { ideal: 650 }
+        }
+      };
+
+      currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+      const video = document.getElementById('webcamVideo');
+      video.srcObject = currentStream;
+
+      document.getElementById('webcamContainer').style.display = 'block';
+      hidePreview();
+    } catch (error) {
+      console.error('웹캠 접근 오류:', error);
+
+      // 웹캠이 실패하면 모바일 카메라 앱 열기로 폴백
+      if (error.name === 'NotAllowedError') {
+        alert('카메라 권한이 필요합니다. 모바일 카메라로 전환합니다.');
+        document.getElementById('camInput').click();
+      } else if (error.name === 'NotFoundError') {
+        alert('카메라를 찾을 수 없습니다. 파일 업로드를 사용해주세요.');
+      } else {
+        alert('웹캠을 시작할 수 없습니다. 모바일 카메라로 전환합니다.');
+        document.getElementById('camInput').click();
+      }
+    }
+  }
+
+  // 웹캠 중지
+  function stopWebcam() {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
+    }
+    document.getElementById('webcamContainer').style.display = 'none';
+  }
+
+  // 사진 촬영
+  function capturePhoto() {
+    const video = document.getElementById('webcamVideo');
+    const canvas = document.getElementById('capturedCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    // Canvas에서 Blob으로 변환
+    canvas.toBlob(function(blob) {
+      capturedImageFile = new File([blob], 'webcam-capture.jpg', { type: 'image/jpeg' });
+      showPreview(URL.createObjectURL(blob));
+      stopWebcam();
+      document.getElementById('analyzeBtn').style.display = 'block';
+    }, 'image/jpeg', 0.9);
+  }
+
+  // 미리보기 표시
+  function showPreview(imageSrc) {
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+
+    previewImage.src = imageSrc;
+    previewContainer.style.display = 'block';
+  }
+
+  // 미리보기 숨기기
+  function hidePreview() {
+    document.getElementById('previewContainer').style.display = 'none';
+    document.getElementById('analyzeBtn').style.display = 'none';
+    capturedImageFile = null;
+  }
+
+  // 파일 선택 처리
+  function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+      capturedImageFile = file;
+      showPreview(URL.createObjectURL(file));
+      document.getElementById('analyzeBtn').style.display = 'block';
+    }
+  }
+
+  // 이미지 분석
+  async function analyzeImage() {
+    const resultDiv = document.getElementById('result');
+    const loadingDiv = document.getElementById('loading');
+
+    resultDiv.innerHTML = '';
+    loadingDiv.style.display = 'block';
+
+    if (!capturedImageFile) {
+      alert('사진을 선택하거나 촬영해주세요.');
+      loadingDiv.style.display = 'none';
+      return;
+    }
+
+    if (capturedImageFile.size > 5 * 1024 * 1024) {
+      alert('5MB 이하의 이미지만 업로드할 수 있습니다.');
+      loadingDiv.style.display = 'none';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', capturedImageFile);
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    if (csrfToken) {
+      formData.append('_csrf', csrfToken);
+    }
+
+    try {
+      const res = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      const data = await res.json();
+      loadingDiv.style.display = 'none';
+
+      if (res.ok && data.success !== false) {
+        let colorsHtml = '-';
+        if (Array.isArray(data.recommendations) && data.recommendations.length > 0) {
+          colorsHtml = data.recommendations.map(
+                  code => `<span class="color-swatch" style="background:${code}" title="${code}"></span>`
+          ).join(' ');
+          colorsHtml += '<span style="margin-left:8px;">' + data.recommendations.join(', ') + '</span>';
+        }
+
+        setTimeout(() => {
+          if (data.redirectUrl) {
+            window.location.href = data.redirectUrl;
+          } else {
+            window.location.href = '/results';
+          }
+        }, 3000);
+      } else {
+        const msg = data && data.error ? data.error : 'AI 분석에 실패했습니다.';
+        alert(msg);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('서버 통신 중 오류가 발생했습니다.');
+      loadingDiv.style.display = 'none';
+    }
+  }
+
+  // 로그아웃 함수
+  function logout() {
+    const csrfTokenMeta = document.querySelector('meta[name="_csrf"]');
+    const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+    const csrfToken = csrfTokenMeta?.getAttribute('content');
+    const csrfHeader = csrfHeaderMeta?.getAttribute('content');
+
+    fetch('/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        [csrfHeader]: csrfToken
+      }
+    }).then(response => {
+      if (response.ok || response.redirected) {
+        sessionStorage.clear();
+        alert('로그아웃되었습니다.');
+        window.location.href = '/';
+      } else {
+        console.error('로그아웃 실패', response);
+        alert('로그아웃 중 문제가 발생했습니다.');
+      }
+    });
+  }
+
+  // 이벤트 리스너 등록
+  document.addEventListener('DOMContentLoaded', function() {
+    // 웹캠 버튼 클릭
+    document.getElementById('webcamBtn').addEventListener('click', startWebcam);
+
+    // 파일 선택 버튼 클릭
+    document.getElementById('fileBtn').addEventListener('click', function() {
+      document.getElementById('imageInput').click();
+    });
+
+    // 모바일 카메라 버튼 (기존 기능 유지)
+    document.getElementById('camInput').addEventListener('change', handleFileSelect);
+
+    // 파일 입력 변경
+    document.getElementById('imageInput').addEventListener('change', handleFileSelect);
+
+    // 사진 촬영 버튼
+    document.getElementById('captureBtn').addEventListener('click', capturePhoto);
+
+    // 웹캠 닫기 버튼
+    document.getElementById('closeWebcamBtn').addEventListener('click', function() {
+      stopWebcam();
+      hidePreview();
+    });
+
+    // 분석 버튼
+    document.getElementById('analyzeBtn').addEventListener('click', analyzeImage);
+
+    // 로그아웃 링크
+    const logoutLink = document.getElementById('logoutLink');
+    if (logoutLink) {
+      logoutLink.onclick = logout;
+    }
+
+    // UI 업데이트
+    updateUI();
+  });
+
+  // 페이지 언로드 시 웹캠 정리
+  window.addEventListener('beforeunload', function() {
+    stopWebcam();
+  });
+
+  // 복사된 코드의 JavaScript 기능 추가
+  // JavaScript로 웹캠 영상 가져오기 (추가 기능)
+  const videoElement = document.getElementById('webcamVideo');
+
+  if (navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+              // 이미 기존 코드에서 웹캠을 처리하고 있으므로
+              // 여기서는 추가적인 설정만 적용
+              console.log("웹캠 스트림이 준비되었습니다.");
+            })
+            .catch(function (error) {
+              console.log("카메라 접근에 실패했습니다:", error);
+            });
+  }
+</script>
+</body>
+</html>
