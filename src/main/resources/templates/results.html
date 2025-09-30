@@ -3,267 +3,432 @@
 <head>
     <meta charset="UTF-8">
     <title>퍼스널 컬러 분석 결과</title>
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
-        .top {
-            position: relative;
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            aspect-ratio: 1 / 1;
-        }
-        .top img {
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 4px;
-            border: 2px solid black;
-            z-index: 1;
-            position: relative;
-            margin-top: 10px;
-            max-height: 50vh;
-            object-fit: cover;
-        }
-        #mask, #out {
-            position: absolute;
-            left: 0; top: 0;
-            width: 100%; height: 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-        #out { z-index: 3; }
-
         body {
             margin: 0;
-            font-family: sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-image: url("/images/mainpage.png");
             background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
+            background-attachment: fixed;
             min-height: 100vh;
         }
-        .container { display: flex; flex-direction: column; align-items: center; padding-top: 20px; }
-        h1, p { text-align: center; margin: 5px 0; }
-
-        .btn-group { margin-top: 20px; }
-        .btn-group button {
-            margin: 0 10px;
-            padding: 10px 20px;
-            border-radius: 4px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, p { text-align: center; margin: 8px 0; color: #333; }
+        #stage {
             position: relative;
-            transition: all 0.3s;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 30px;
+            border: 3px solid #333;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            overflow: hidden;
         }
-        .prev-btn { background: #fff; color: #000; border: 2px solid #000; }
-        .prev-btn:hover { background: #000; color: #fff; }
-        .next-btn { background: #000; color: #fff; }
-        .next-btn:hover { background: #fff; color: #000; border: 2px solid #000; }
-
-        button::after {
-            content: attr(data-tooltip);
-            position: absolute; bottom: 125%; left: 50%;
-            transform: translateX(-50%);
-            background: #555; color: #fff;
-            padding: 5px 10px; border-radius: 4px;
-            font-size: 12px; white-space: nowrap;
-            opacity: 0; visibility: hidden; transition: 0.3s; z-index: 1000;
+        #resultImage {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 9px;
         }
-        button:hover::after { opacity: 1; visibility: visible; }
 
-        .snowflake { position: fixed; top: -10px; font-size: 18px; animation: fall linear infinite; z-index: 9999; }
-        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            #stage { max-width: 100%; }
+            .chart-grid { grid-template-columns: 1fr; }
+            .info-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        }
 
         .color-swatch {
-            width: 50px; height: 50px;
-            border: 1px solid #ddd; border-radius: 4px;
-            cursor: pointer; transition: transform .2s, border-color .2s;
-        }
-        .color-swatch:hover { transform: scale(1.1); border-color: #aaa; }
-
-        /* 상세분석(차트) */
-        .charts-section {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
             position: relative;
-            margin: 30px 0; padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: min(900px, 92vw);
         }
+        .color-swatch:hover { transform: scale(1.1); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .color-swatch.selected { border: 3px solid #333; box-shadow: 0 0 10px rgba(0,0,0,0.5); transform: scale(1.15); }
+        .color-swatch.selected::after {
+            content: '✓';
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white; font-weight: bold; font-size: 16px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .charts-section { width: 100%; max-width: 800px; margin: 30px 0; padding: 20px; background: rgba(255, 255, 255, 0.9); border-radius: 10px; }
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .chart-container {
-            margin: 20px 0; padding: 15px; background: #fff;
-            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: white; border-radius: 8px; padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: 300px; min-height: 280px;
         }
-        .chart-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; text-align: center; }
-        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+        canvas { width: 100% !important; height: 220px !important; min-height: 200px; }
 
-        /* 추천 설명 박스 */
-        .result-box {
-            position: relative;
-            background-color: #f4f4f4; border: 1px solid #ccc;
-            padding: 20px; width: 80%; max-width: 600px;
-            margin: 20px auto; border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            font-size: 14px; color: #333;
-        }
+        .recommendations-section { margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.8); border-radius: 10px; }
+        .recommendations-section h3 { text-align: center; color: #333; margin-bottom: 15px; }
+        .color-swatches { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
 
-        /* 닫기 버튼 공통 */
-        .close-btn {
-            position: absolute; top: 8px; right: 8px;
-            background: #eee; color: #333; border: 1px solid #bbb;
-            border-radius: 16px; padding: 6px 10px; cursor: pointer;
-            font-size: 12px; line-height: 1; transition: background .2s;
+        #canvasOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; border-radius: 4px; }
+
+        /* 토글 공통 */
+        .hidden { display: none; }
+        .toggle-buttons {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 16px;
         }
-        .close-btn:hover { background: #ddd; }
+        .toggle-buttons button, .close-btn {
+            padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; border: 2px solid #333;
+            background: #fff; color: #333; transition: all .2s ease;
+        }
+        .toggle-buttons button:hover, .close-btn:hover { background: #333; color: #fff; }
+
+        /* 톤 설명 박스 */
+        #toneDescriptionBox { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+        #toneDescriptionBox h3 { margin-top: 8px; }
+        #toneSection h2 { text-align: center; margin-bottom: 16px; color: #333; }
     </style>
 </head>
 <body>
-
 <div class="container">
-    <div class="top" id="stage">
-        <img id="resultImage" th:src="@{'/files/' + ${analysis.storedFileName}}" alt=""/>
-        <canvas id="mask"></canvas>
-        <canvas id="out"></canvas>
+    <div id="stage">
+        <img id="resultImage" th:src="@{'/files/' + ${analysis.storedFileName}}" alt="분석 이미지"/>
+        <canvas id="canvasOverlay"></canvas>
     </div>
 
-    <h1 th:text="${analysis.colorType.displayName} + ' - 당신의 퍼스널 컬러입니다'"></h1>
-    <p th:text="${description}"></p>
-    <p>신뢰도: <span th:text="${confidence}"></span>%</p>
+    <div class="result-header" style="text-align: center; margin-bottom: 16px; padding: 20px; background: rgba(255, 255, 255, 0.9); border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h1 style="margin: 0 0 10px 0; color: #333; font-size: 28px;" th:text="${analysis.colorType.displayName} + ' - 당신의 퍼스널 컬러입니다'"></h1>
+        <p style="margin: 0; color: #666; font-size: 16px; line-height: 1.5;" th:text="${description}"></p>
+        <div style="margin-top: 15px; padding: 10px; background: rgba(54, 162, 235, 0.1); border-radius: 8px; border-left: 4px solid #36A2EB;">
+            <p style="margin: 0; color: #333; font-weight: bold; font-size: 14px;">
+                신뢰도: <span th:text="${confidence} + '%'"></span>
+                <span style="color: #666; font-weight: normal;">(품질: <span th:text="${qualityLevel}"></span>)</span>
+            </p>
+        </div>
+    </div>
 
-    <div th:if="${recommendations}">
-        <h3>추천 색상:</h3>
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <!-- 추천 색상 -->
+    <div th:if="${recommendations != null && !recommendations.isEmpty()}" class="recommendations-section">
+        <h3>🎨 추천 색상</h3>
+        <p style="text-align: center; color: #666; margin-bottom: 20px; font-size: 14px;">아래 색상을 클릭하여 옷 색상 미리보기를 확인해보세요</p>
+        <div class="color-swatches">
             <div th:each="color : ${recommendations}"
                  class="color-swatch"
-                 th:title="${color}"
-                 th:style="'background-color:' + ${color}">
+                 th:style="'background-color:' + ${color}"
+                 th:data-color="${color}"
+                 th:title="'클릭하여 ' + ${color} + ' 색상 적용'">
             </div>
         </div>
-        <p style="text-align:center; color:#666; margin-top:8px;">
-            사진 위를 한 번 클릭해 상의의 기준색을 샘플한 다음, 추천 색상을 클릭하세요.
-        </p>
+        <div style="text-align: center; margin-top: 15px; padding: 10px; background: rgba(255, 255, 255, 0.7); border-radius: 8px;">
+            <p style="margin: 0; color: #666; font-size: 12px;">💡 팁: 이미지 위를 클릭한 후 추천 색상을 선택하면 실제 색상 적용 효과를 볼 수 있습니다</p>
+        </div>
     </div>
 
-    <!-- 신뢰도 분석/추천 버튼 -->
-    <div class="btn-group" style="margin-top:16px;">
-        <button id="toggleBtn" class="next-btn" onclick="openAnalysis()" data-tooltip="신뢰도 분석">신뢰도 분석</button>
-        <button id="recommendBtn" class="prev-btn" onclick="showToneDescription()" data-tooltip="추천">추천</button>
+    <!-- 보기/닫기 토글 버튼 -->
+    <div class="toggle-buttons">
+        <button id="openDetailBtn" type="button">상세 분석 보기</button>
+        <button id="closeDetailBtn" type="button" class="hidden">상세 분석 닫기</button>
+        <button id="openToneBtn" type="button"> 추천 보기</button>
+        <button id="closeToneBtn" type="button" class="hidden"> 추천 닫기</button>
     </div>
 
-    <!-- 상세분석: 처음에는 숨김 -->
-    <div id="analysisSection" class="charts-section" style="display:none;">
-        <button type="button" class="close-btn" onclick="closeAnalysis()">신뢰도 분석 닫기</button>
+    <!-- 상세 분석: 초기 숨김 -->
+    <section id="detailSection" class="charts-section hidden">
         <h2 style="text-align: center; margin-bottom: 30px; color: #333;">📊 상세 분석 결과</h2>
         <div class="chart-grid">
             <div class="chart-container">
-                <div class="chart-title">신뢰도 분석</div>
-                <canvas id="confidenceChart" width="300" height="200"></canvas>
+                <h4 style="text-align: center; margin-bottom: 15px; color: #555;">신뢰도 분석</h4>
+                <canvas id="confidenceChart" width="300" height="220"></canvas>
             </div>
             <div class="chart-container">
-                <div class="chart-title">퍼스널 컬러 타입 비교</div>
-                <canvas id="typeComparisonChart" width="300" height="200"></canvas>
+                <h4 style="text-align: center; margin-bottom: 15px; color: #555;">퍼스널 컬러 타입 비교</h4>
+                <canvas id="typeComparisonChart" width="300" height="220"></canvas>
             </div>
         </div>
-    </div>
 
-    <!-- toneDescription 출력 박스: 처음에는 숨김 -->
-    <div id="toneDescriptionBox" class="result-box" style="display:none;">
-        <button type="button" class="close-btn" onclick="closeToneDescription()">추천 닫기</button>
-        <!-- setToneDescription()가 내용 채움 -->
-    </div>
+        <div class="analysis-details" style="margin-top: 30px; padding: 20px; background: rgba(255, 255, 255, 0.8); border-radius: 10px;">
+            <h3 style="text-align: center; margin-bottom: 20px; color: #333;">분석 상세 정보</h3>
+            <div class="info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div class="info-item" style="padding: 15px; background: white; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">신뢰도</h4>
+                    <p style="margin: 0; font-size: 24px; font-weight: bold; color: #333;" th:text="${confidence} + '%'"></p>
+                    <p style="margin: 5px 0 0 0; font-size: 12px; color: #888;" th:text="'품질: ' + ${qualityLevel}"></p>
+                </div>
+                <div class="info-item" style="padding: 15px; background: white; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">분석 타입</h4>
+                    <p style="margin: 0; font-size: 18px; font-weight: bold; color: #333;" th:text="${analysis.colorType.displayName}"></p>
+                </div>
+                <div class="info-item" style="padding: 15px; background: white; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">추천 색상 수</h4>
+                    <p style="margin: 0; font-size: 24px; font-weight: bold; color: #333;" th:text="${#lists.size(recommendations)} + '개'"></p>
+                </div>
+                <div class="info-item" style="padding: 15px; background: white; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <h4 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">분석 일시</h4>
+                    <p style="margin: 0; font-size: 12px; color: #333;" th:text="${#temporals.format(analysisDate, 'yyyy-MM-dd HH:mm')}"></p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <!-- 페이지 네비게이션 -->
-    <div class="btn-group">
-        <button class="prev-btn"
-                th:onclick="|window.location.href='@{/upload}'|"
-                data-tooltip="사진 업로드로 돌아가기">이전</button>
-        <button class="next-btn"
-                onclick="location.href='shop.html'"
-                data-tooltip="쇼핑 페이지로 이동">다음</button>
+    <!-- 퍼스널 컬러 타입별 특징: 초기 숨김 -->
+    <section id="toneSection" class="charts-section hidden">
+        <h2>퍼스널 컬러 추천</h2>
+        <div id="toneDescriptionBox"></div>
+    </section>
+
+    <!-- 네비게이션 -->
+    <div class="navigation-buttons" style="margin-top: 40px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+        <button onclick="window.location.href='/upload'"
+                style="padding: 12px 24px; background: #fff; color: #333; border: 2px solid #333; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+            ← 새로운 분석하기
+        </button>
+        <button onclick="goToShopping()"
+                style="padding: 12px 24px; background: #333; color: #fff; border: 2px solid #333; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; font-size: 14px;">
+            쇼핑하러 가기 →
+        </button>
     </div>
 </div>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    // 이미지/마스크 로딩
-    const maskDataUri = '[[${segmentationMask}]]';
-    const imgEl = document.getElementById('resultImage');
-    const maskCanvas = document.getElementById('mask');
-    const outCanvas = document.getElementById('out');
+<script>
+    function goToShopping() {
+        const analysisId = /*[[${analysis.id}]]*/ null;
+        if (analysisId) {
+            window.location.href = '/shop?analysisId=' + analysisId;
+        } else {
+            window.location.href = '/shop';
+        }
+    }
+</script>
 
-    imgEl.addEventListener('load', () => {
-        [maskCanvas, outCanvas].forEach(c => {
-            c.width = imgEl.width;
-            c.height = imgEl.height;
-            c.style.width = imgEl.width+'px';
-            c.style.height = imgEl.height+'px';
+<script th:inline="javascript">
+    // 초기 차트/색상 기능 유지
+    document.addEventListener('DOMContentLoaded', () => {
+        const clothMaskUrl  = "/static/masks/";
+        const personMaskUrl = "/static/pmasks/";
+        initializeColorChangeFunctionality(clothMaskUrl, personMaskUrl);
+
+        if (typeof Chart !== 'undefined') {
+            initializeCharts();
+        } else {
+            const checkChart = setInterval(() => {
+                if (typeof Chart !== 'undefined') { clearInterval(checkChart); initializeCharts(); }
+            }, 100);
+            setTimeout(() => { if (typeof Chart === 'undefined') { clearInterval(checkChart); console.error('Chart.js 로드 실패'); showChartError(); } }, 5000);
+        }
+
+        // 토글 버튼
+        const detail = document.getElementById('detailSection');
+        const tone   = document.getElementById('toneSection');
+
+        const openDetailBtn  = document.getElementById('openDetailBtn');
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
+        const openToneBtn    = document.getElementById('openToneBtn');
+        const closeToneBtn   = document.getElementById('closeToneBtn');
+
+        function show(el) { el && el.classList.remove('hidden'); }
+        function hide(el) { el && el.classList.add('hidden'); }
+
+        openDetailBtn?.addEventListener('click', () => {
+            show(detail);
+            hide(openDetailBtn);
+            show(closeDetailBtn);
         });
-        const ctx = maskCanvas.getContext('2d');
-        const mImg = new Image();
-        mImg.onload = () => ctx.drawImage(mImg, 0, 0);
-        mImg.src = maskDataUri;
+        closeDetailBtn?.addEventListener('click', () => {
+            hide(detail);
+            show(openDetailBtn);
+            hide(closeDetailBtn);
+        });
+
+        openToneBtn?.addEventListener('click', () => {
+            show(tone);
+            setToneDescription();
+            hide(openToneBtn);
+            show(closeToneBtn);
+        });
+        closeToneBtn?.addEventListener('click', () => {
+            hide(tone);
+            show(openToneBtn);
+            hide(closeToneBtn);
+        });
+
+        // 내부 닫기 버튼에서 섹션 닫기 연결
+        window.closeToneDescription = function() {
+            hide(tone);
+            show(openToneBtn);
+            hide(closeToneBtn);
+        };
     });
 
-    // 추천 색상 리컬러
-    window.applyRecolor = function(targetColor) {
-        const imgCtx = outCanvas.getContext('2d');
-        imgCtx.clearRect(0,0,outCanvas.width,outCanvas.height);
-        imgCtx.drawImage(imgEl, 0,0,outCanvas.width,outCanvas.height);
-        const imgData = imgCtx.getImageData(0,0,outCanvas.width,outCanvas.height);
-        const maskData = maskCanvas.getContext('2d').getImageData(0,0,maskCanvas.width,maskCanvas.height).data;
-
-        const rgb = hexToRgb(targetColor);
-        const tr = rgb ? rgb.r : 0, tg = rgb ? rgb.g : 0, tb = rgb ? rgb.b : 0;
-
-        for (let i=0; i<maskData.length; i+=4) {
-            if (maskData[i] > 128) {
-                const idx = i;
-                const r = imgData.data[idx], g = imgData.data[idx+1], b = imgData.data[idx+2];
-                const lum = (0.2126*r +0.7152*g +0.0722*b)/255;
-                imgData.data[idx  ] = tr*lum;
-                imgData.data[idx+1] = tg*lum;
-                imgData.data[idx+2] = tb*lum;
+    // Chart.js 초기화 함수 (기존 코드 요약, 상세 구현은 그대로 유지 가능)
+    function initializeCharts() {
+        createConfidenceChart();
+        createTypeComparisonChart();
+    }
+    function createConfidenceChart() {
+        const ctx = document.getElementById('confidenceChart');
+        if (!ctx) return;
+        const confidence = /*[[${confidence}]]*/ 0;
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['신뢰도', '불확실성'],
+                datasets: [{
+                    data: [confidence, 100 - confidence],
+                    backgroundColor: [
+                        confidence > 70 ? '#4CAF50' : confidence > 50 ? '#FF9800' : '#F44336',
+                        '#E0E0E0'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+    }
+    function createTypeComparisonChart() {
+        const ctx = document.getElementById('typeComparisonChart');
+        if (!ctx) return;
+        const probabilities = /*[[${probabilities}]]*/ {};
+        const labels = ['SPRING', 'SUMMER', 'AUTUMN', 'WINTER'];
+        const typeLabels = ['봄 웜톤', '여름 쿨톤', '가을 웜톤', '겨울 쿨톤'];
+        const data = labels.map(label => probabilities[label] || 0);
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: typeLabels,
+                datasets: [{
+                    label: '유사도 (%)',
+                    data: data,
+                    fill: true,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { r: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } },
+                plugins: { legend: { position: 'bottom' } }
             }
+        });
+    }
+    function showChartError() {
+        const chartContainers = document.querySelectorAll('.chart-container');
+        chartContainers.forEach(container => {
+            const canvas = container.querySelector('canvas');
+            if (canvas) {
+                canvas.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:14px;';
+                errorDiv.textContent = '차트를 불러올 수 없습니다.';
+                container.appendChild(errorDiv);
+            }
+        });
+    }
+
+    // 이미지 컬러 변경 시스템 (기존 함수 유지)
+    function initializeColorChangeFunctionality(clothUrl, personUrl) {
+        const resultImage = document.getElementById('resultImage');
+        const canvas = document.getElementById('canvasOverlay');
+        const ctx = canvas.getContext('2d');
+        const swatches = document.querySelectorAll('.color-swatch');
+        let originalImageData = null;
+        let clothData = null;
+        let personData = null;
+
+        function setupCanvas() {
+            canvas.width = resultImage.offsetWidth;
+            canvas.height = resultImage.offsetHeight;
+            ctx.drawImage(resultImage, 0, 0, canvas.width, canvas.height);
+            originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            if (clothUrl) loadMask(clothUrl, data => clothData = data);
+            if (personUrl) loadMask(personUrl, data => personData = data);
         }
-        imgCtx.putImageData(imgData,0,0);
-    };
+        resultImage.onload = setupCanvas;
+        if (resultImage.complete) setupCanvas();
 
-    // UI 토글
-    function openAnalysis() {
-        const section = document.getElementById("analysisSection");
-        if (section) section.style.display = "block";
-        const box = document.getElementById("toneDescriptionBox");
-        if (box) box.style.display = "none";
-        const t = document.getElementById("toggleBtn");
-        if (t) t.style.display = "none";
-        initializeCharts();
-    }
-    function closeAnalysis() {
-        // 섹션 숨기기
-        const section = document.getElementById("analysisSection");
-        if (section) section.style.display = "none";
-        // 열기 버튼 다시 표시
-        const t = document.getElementById("toggleBtn");
-        if (t) t.style.display = "inline-block";
-        // 차트 정리
-        if (window.__confidenceChart) { window.__confidenceChart.destroy(); window.__confidenceChart = null; }
-        if (window.__typeChart) { window.__typeChart.destroy(); window.__typeChart = null; }
+        function loadMask(maskUrl, callback) {
+            const maskImg = new Image();
+            maskImg.crossOrigin = 'anonymous';
+            maskImg.onload = function() {
+                const maskCanvas = document.createElement('canvas');
+                const maskCtx = maskCanvas.getContext('2d');
+                maskCanvas.width = canvas.width;
+                maskCanvas.height = canvas.height;
+                maskCtx.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
+                const maskData = maskCtx.getImageData(0, 0, canvas.width, canvas.height);
+                callback(maskData.data);
+            };
+            maskImg.src = maskUrl;
+        }
+
+        swatches.forEach(swatch => {
+            swatch.addEventListener('click', function() {
+                swatches.forEach(s => s.classList.remove('selected'));
+                this.classList.add('selected');
+                const color = hexToRgb(swatch.dataset.color || swatch.style.backgroundColor);
+                applyColorToClothing(color);
+            });
+        });
+
+        function applyColorToClothing(colorHex) {
+            if (!originalImageData) return;
+            const imageData = ctx.createImageData(originalImageData);
+            const data = imageData.data;
+            const originalData = originalImageData.data;
+            const rgb = hexToRgb(colorHex);
+            if (!rgb) return;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const maskCloth = clothData && clothData[i] > 128;
+                const maskPerson = personData && personData[i] > 128;
+
+                if (maskCloth) {
+                    data[i]     = Math.min(255, originalData[i]     * rgb.r / 128);
+                    data[i + 1] = Math.min(255, originalData[i + 1] * rgb.g / 128);
+                    data[i + 2] = Math.min(255, originalData[i + 2] * rgb.b / 128);
+                    data[i + 3] = originalData[i + 3];
+                } else if (maskPerson) {
+                    data[i] = 255; data[i + 1] = 255; data[i + 2] = 255; data[i + 3] = originalData[i + 3];
+                } else {
+                    data[i]     = originalData[i];
+                    data[i + 1] = originalData[i + 1];
+                    data[i + 2] = originalData[i + 2];
+                    data[i + 3] = originalData[i + 3];
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function hexToRgb(input) {
+            if (input && typeof input === 'object' && input.r !== undefined) return input;
+            if (typeof input !== 'string') return null;
+            if (input.startsWith('rgb')) {
+                const match = input.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+                return match ? { r: parseInt(match[1]), g: parseInt(match[2]), b: parseInt(match[3]) } : null;
+            }
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(input);
+            return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+        }
+
+        window.addEventListener('resize', function() {
+            if (originalImageData) { setTimeout(setupCanvas, 100); }
+        });
     }
 
-    function showToneDescription() {
-        setToneDescription();
-        const box = document.getElementById("toneDescriptionBox");
-        if (box) box.style.display = "block";
-    }
-    function closeToneDescription() {
-        const box = document.getElementById("toneDescriptionBox");
-        if (box) box.style.display = "none";
-    }
-
-    // toneDescription 렌더링
+    // 요청한 setToneDescription 삽입
     function setToneDescription() {
         const rawType = ('[[${analysis.colorType}]]' || '').toString().toLowerCase();
         const norm = rawType.includes('spring') ? 'spring'
@@ -325,253 +490,6 @@
             <p><b>메이크업:</b> ${tone.메이크업}</p>
         `;
     }
-
-    // 눈송이 장식
-    const SNOW_COLORS = ["#FFB6C1", "#FF69B4", "#87CEEB", "#8A2BE2", "#7FFFD4", "#FFD700", "#FFA07A"];
-    const SNOW_SYMBOLS = ["❄", "♥", "✿", "★"];
-    function createSnowflake() {
-        const flake = document.createElement("div");
-        flake.className = "snowflake";
-        flake.style.left = Math.random() * window.innerWidth + "px";
-        flake.style.animationDuration = 8 + Math.random() * 8 + "s";
-        flake.style.color = SNOW_COLORS[Math.floor(Math.random() * SNOW_COLORS.length)];
-        flake.textContent = SNOW_SYMBOLS[Math.floor(Math.random() * SNOW_SYMBOLS.length)];
-        document.body.appendChild(flake);
-        setTimeout(() => flake.remove(), 5000);
-    }
-    setInterval(createSnowflake, 500);
-
-    // 이미지 클릭 샘플링 등(생략 없이 필요 부분 유지)
-    (function () {
-        const imgEl2 = document.getElementById('resultImage');
-        const stage = document.getElementById('stage');
-        const mask = document.getElementById('mask');
-        const out = document.getElementById('out');
-        if (!imgEl2 || !stage || !mask || !out) return;
-
-        let picked = null;
-        let ready = false;
-        let cache = { iw:0, ih:0, cw:0, ch:0, scale:1 };
-
-        const clamp = (v, min, max) => v < min ? min : (v > max ? max : v);
-        function rgbToHsl(r, g, b) {
-            r/=255; g/=255; b/=255;
-            const max = Math.max(r,g,b), min = Math.min(r,g,b);
-            let h, s, l = (max+min)/2;
-            if (max === min) { h = s = 0; }
-            else {
-                const d = max - min; s = l > 0.5 ? d/(2 - max - min) : d/(max + min);
-                switch (max) {
-                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-                    case g: h = (b - r) / d + 2; break;
-                    case b: h = (r - g) / d + 4; break;
-                }
-                h *= 60;
-            }
-            return [h, s, l];
-        }
-        function hexToRgb(hex) {
-            if (!hex) return [0,0,0];
-            hex = hex.toString().trim();
-            if (hex.startsWith('rgb')) {
-                const m = hex.match(/rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)/i);
-                if (m) return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
-            }
-            hex = hex.replace('#','');
-            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-            const n = parseInt(hex,16);
-            return [(n>>16)&255, (n>>8)&255, n&255];
-        }
-
-        function sizeCanvases() {
-            if (!imgEl2.naturalWidth) return;
-            const iw = imgEl2.naturalWidth, ih = imgEl2.naturalHeight;
-            const targetW = Math.min(900, iw);
-            const targetH = Math.round(targetW * ih / iw);
-            [mask, out].forEach(c => { c.width = targetW; c.height = targetH; });
-            cache = { iw, ih, cw: targetW, ch: targetH, scale: targetW / iw };
-            ready = true;
-        }
-        if (imgEl2.complete) sizeCanvases();
-        imgEl2.addEventListener('load', sizeCanvases);
-
-        stage.addEventListener('click', (e) => {
-            if (!ready) return;
-            const rect = stage.getBoundingClientRect();
-            const xr = (e.clientX - rect.left) / rect.width;
-            const yr = (e.clientY - rect.top) / rect.height;
-            const cx = Math.round(xr * out.width);
-            const cy = Math.round(yr * out.height);
-
-            const tmp = document.createElement('canvas');
-            tmp.width = out.width; tmp.height = out.height;
-            const tctx = tmp.getContext('2d');
-            tctx.drawImage(imgEl2, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
-            const px = tctx.getImageData(cx, cy, 1, 1).data;
-            const [h, s, l] = rgbToHsl(px[0], px[1], px[2]);
-            picked = { h, s, l };
-            buildMask();
-        });
-
-        function bindSwatches() {
-            document.querySelectorAll('.color-swatch').forEach(el => {
-                el.addEventListener('click', () => {
-                    const bg = getComputedStyle(el).backgroundColor;
-                    applyRecolor(bg);
-                });
-            });
-        }
-        window.addEventListener('load', bindSwatches);
-
-        function buildMask() {
-            if (!picked || !ready) return;
-            const t = document.createElement('canvas');
-            t.width = out.width; t.height = out.height;
-            const ctx = t.getContext('2d');
-            ctx.drawImage(imgEl2, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
-
-            const src = ctx.getImageData(0, 0, out.width, out.height);
-            const d = src.data;
-
-            const mctx = mask.getContext('2d');
-            const maskData = mctx.createImageData(out.width, out.height);
-            const md = maskData.data;
-
-            for (let i = 0; i < d.length; i += 4) {
-                const r = d[i], g = d[i+1], b = d[i+2], a = d[i+3];
-                if (a === 0) { md[i+3] = 0; continue; }
-
-                const [h, s, l] = rgbToHsl(r, g, b);
-                let dh = Math.abs(h - picked.h); if (dh > 180) dh = 360 - dh;
-                const ds = Math.abs(s - picked.s) * 100;
-                const dl = Math.abs(l - picked.l) * 100;
-
-                const dist = dh * 0.7 + ds * 0.2 + dl * 0.1;
-                const inside = dist < 32 && s > 0.12 && l > 0.05 && l < 0.95;
-
-                md[i]   = 16;
-                md[i+1] = 185;
-                md[i+2] = 129;
-                md[i+3] = inside ? 90 : 0;
-            }
-            mctx.putImageData(maskData, 0, 0);
-        }
-
-        function applyRecolor(targetColor) {
-            if (!picked) { alert('이미지 위를 클릭해서 상의 기준색을 먼저 샘플하세요.'); return; }
-            const [tr, tg, tb] = hexToRgb(targetColor);
-
-            const octx = out.getContext('2d');
-            octx.clearRect(0, 0, out.width, out.height);
-            octx.drawImage(imgEl2, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
-            const imgData = octx.getImageData(0, 0, out.width, out.height);
-            const d = imgData.data;
-
-            buildMask();
-            const mctx = mask.getContext('2d');
-            const m = mctx.getImageData(0, 0, mask.width, mask.height).data;
-
-            for (let i = 0; i < d.length; i += 4) {
-                if (m[i+3] > 0) {
-                    const r = d[i], g = d[i+1], b = d[i+2];
-                    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-                    const rr = tr * lum, gg = tg * lum, bb = tb * lum;
-                    d[i]   = clamp(Math.round(rr * 0.85 + r * 0.15), 0, 255);
-                    d[i+1] = clamp(Math.round(gg * 0.85 + g * 0.15), 0, 255);
-                    d[i+2] = clamp(Math.round(bb * 0.85 + b * 0.15), 0, 255);
-                }
-            }
-            octx.putImageData(imgData, 0, 0);
-        }
-        window.applyRecolor = window.applyRecolor || applyRecolor;
-    })();
-
-    // 차트 인스턴스 보관
-    window.__confidenceChart = null;
-    window.__typeChart = null;
-
-    // 차트 초기화
-    function initializeCharts() {
-        const confidence = /*[[${confidence}]]*/ 38;
-        const colorType = /*[[${analysis.colorType}]]*/ 'SUMMER_COOL';
-        const typeComparisonData = /*[[${typeComparisonData}]]*/ {};
-
-        createConfidenceChart(confidence);
-        createTypeComparisonChart(colorType, confidence, typeComparisonData);
-    }
-
-    function createConfidenceChart(confidence) {
-        const ctx = document.getElementById('confidenceChart').getContext('2d');
-        if (window.__confidenceChart) { window.__confidenceChart.destroy(); }
-        window.__confidenceChart = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['신뢰도', '불확실성'],
-                datasets: [{
-                    data: [confidence, 100 - confidence],
-                    backgroundColor: [
-                        confidence > 70 ? '#4CAF50' : confidence > 50 ? '#FF9800' : '#F44336',
-                        '#E0E0E0'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) { return context.label + ': ' + context.parsed + '%'; }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    function createTypeComparisonChart(currentType, confidence, typeComparisonData) {
-        const ctx = document.getElementById('typeComparisonChart').getContext('2d');
-        if (window.__typeChart) { window.__typeChart.destroy(); }
-
-        let typeLabels, similarities;
-        if (typeComparisonData && typeComparisonData.similarities && typeComparisonData.typeLabels) {
-            typeLabels = Object.values(typeComparisonData.typeLabels);
-            similarities = Object.values(typeComparisonData.similarities).map(val => val * 100);
-        } else {
-            const types = ['SPRING', 'SUMMER', 'AUTUMN', 'WINTER'];
-            typeLabels = ['봄 웜톤', '여름 쿨톤', '가을 웜톤', '겨울 쿨톤'];
-            similarities = types.map(type => type === currentType ? confidence : Math.random() * 30 + 10);
-        }
-
-        window.__typeChart = new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: typeLabels,
-                datasets: [{
-                    label: '유사도 (%)',
-                    data: similarities,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2,
-                    pointBackgroundColor: 'rgba(54, 162, 235, 1)'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: { r: { beginAtZero: true, max: 100 } }
-            }
-        });
-    }
-
-    // 유틸리티
-    function hexToRgb(hex) {
-        const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
-        return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
-    }
-    /*]]>*/
 </script>
-
 </body>
 </html>
