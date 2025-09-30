@@ -1,705 +1,3 @@
-<!--<!DOCTYPE html>-->
-<!--<html lang="ko" xmlns:th="http://www.thymeleaf.org">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8">-->
-<!--    <title>퍼스널 컬러 분석 결과</title>-->
-<!--    <meta name="_csrf" th:content="${_csrf.token}"/>-->
-<!--    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>-->
-<!--    <style>-->
-<!--        body {-->
-<!--            margin: 0;-->
-<!--            font-family: sans-serif;-->
-<!--            background-image: url("/images/mainpage.png");-->
-<!--            background-size: cover;-->
-<!--            background-repeat: no-repeat;-->
-<!--            background-position: center;-->
-<!--            min-height: 100vh;-->
-<!--        }-->
-<!--        .container {-->
-<!--            display: flex;-->
-<!--            flex-direction: column;-->
-<!--            align-items: center;-->
-<!--            padding-top: 20px;-->
-<!--        }-->
-<!--        .top img {-->
-<!--            margin-top: 10px;-->
-<!--            width: 100%;-->
-<!--            max-height: 50vh;-->
-<!--            object-fit: cover;-->
-<!--            /*margin-bottom: 5px;*/-->
-<!--            border-radius: 4px;-->
-<!--            border: 2px solid black;-->
-
-<!--            /* 이미지가 눈송이보다 위에 오도록 */-->
-<!--            position: relative;-->
-<!--            z-index: 1;-->
-<!--        }-->
-<!--        #selectedColorBox {-->
-<!--            display: none;-->
-<!--            width: 100%;-->
-<!--            height: 100px;-->
-<!--            border-radius: 4px;-->
-<!--            border: 2px solid black;-->
-<!--            position: relative;-->
-<!--            z-index: 1;-->
-<!--        }-->
-<!--        h1, p { text-align: center; margin: 5px 0; }-->
-<!--        .btn-group { margin-top: 20px; }-->
-<!--        .btn-group button {-->
-<!--            margin: 0 10px;-->
-<!--            padding: 10px 20px;-->
-<!--            border-radius: 4px;-->
-<!--            border: none;-->
-<!--            font-weight: bold;-->
-<!--            cursor: pointer;-->
-<!--            position: relative;-->
-<!--            transition: all 0.3s;-->
-<!--        }-->
-<!--        .prev-btn {-->
-<!--            background: #fff; color: #000; border: 2px solid #000;-->
-<!--        }-->
-<!--        .prev-btn:hover { background: #000; color: #fff; }-->
-<!--        .next-btn {-->
-<!--            background: #000; color: #fff;-->
-<!--        }-->
-<!--        .next-btn:hover { background: #fff; color: #000; border:2px solid #000; }-->
-<!--        button::after {-->
-<!--            content: attr(data-tooltip);-->
-<!--            position: absolute;-->
-<!--            bottom: 125%; left: 50%;-->
-<!--            transform: translateX(-50%);-->
-<!--            background: #555; color: #fff;-->
-<!--            padding: 5px 10px; border-radius: 4px;-->
-<!--            font-size:12px; white-space:nowrap;-->
-<!--            opacity:0; visibility:hidden;-->
-<!--            transition:0.3s; z-index:1000;-->
-<!--        }-->
-<!--        button:hover::after { opacity:1; visibility:visible; }-->
-<!--        .snowflake {-->
-<!--            position: fixed;-->
-<!--            top: -10px;-->
-<!--            font-size: 20px;-->
-<!--            animation: fall linear infinite;-->
-
-<!--            /* 이미지보다 뒤로 가도록 */-->
-<!--            z-index: 0;-->
-<!--        }-->
-<!--        @keyframes fall {-->
-<!--            to { transform: translateY(100vh) rotate(360deg); }-->
-<!--        }-->
-<!--        .color-swatch {-->
-<!--            width: 50px;-->
-<!--            height: 50px;-->
-<!--            border: 1px solid #ddd;-->
-<!--            border-radius: 4px;-->
-<!--            cursor: pointer;-->
-<!--            transition: transform .2s;-->
-<!--        }-->
-<!--        .color-swatch:hover {-->
-<!--            transform: scale(1.1);-->
-<!--            border-color: #aaa;-->
-<!--        }-->
-<!--        .result-box {-->
-<!--            background-color: #f4f4f4;-->
-<!--            border: 1px solid #ccc;-->
-<!--            padding: 20px;-->
-<!--            width: 80%;-->
-<!--            max-width: 600px;-->
-<!--            margin: 20px auto;-->
-<!--            border-radius: 8px;-->
-<!--            box-shadow: 0 2px 6px rgba(0,0,0,0.1);-->
-<!--            font-size: 14px;-->
-<!--            color: #333;-->
-<!--            position: relative;-->
-<!--            z-index: 1;-->
-<!--        }-->
-<!--        .result-box p {-->
-<!--            margin: 10px 0;-->
-<!--        }-->
-<!--    </style>-->
-<!--</head>-->
-<!--<body>-->
-<!--<div class="container">-->
-<!--    <div class="top">-->
-<!--        <img id="resultImage" th:src="@{'/files/' + ${analysis.storedFileName}}" alt="분석된 이미지">-->
-<!--        <div id="selectedColorBox"></div>-->
-<!--    </div>-->
-<!--    <div class="result-box">-->
-<!--        <h1 th:text="${analysis.colorType.displayName} + ' - 당신의 퍼스널 컬러입니다'" id="resultTitle"></h1>-->
-<!--        <p th:text="${description}"></p>-->
-<!--        <p>신뢰도: <span th:text="${confidence}"></span>%</p>-->
-<!--        <div th:if="${recommendations}">-->
-<!--            <h3>추천 색상:</h3>-->
-<!--            <div style="display: flex; gap: 10px; flex-wrap: wrap;">-->
-<!--                <div th:each="color : ${recommendations}"-->
-<!--                     class="color-swatch"-->
-<!--                     th:title="${color}"-->
-<!--                     style="width: 50px; height: 50px; border:1px solid #ddd; border-radius:4px;"-->
-<!--                     th:style="'background-color:' + ${color}">-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--    <div class="btn-group">-->
-<!--        <button class="prev-btn"-->
-<!--                th:onclick="|window.location.href='@{/upload}'|"-->
-<!--                data-tooltip="사진 업로드로 돌아가기">-->
-<!--            이전-->
-<!--        </button>-->
-<!--        <button class="next-btn" onclick="location.href='1.html'" data-tooltip="쇼핑 페이지로 이동">다음</button>-->
-<!--    </div>-->
-<!--</div>-->
-<!--<script>-->
-<!--    window.onload = function() {-->
-<!--        // color-swatch 클릭 이벤트-->
-<!--        document.querySelectorAll('.color-swatch').forEach(function(swatch) {-->
-<!--            swatch.addEventListener('click', function() {-->
-<!--                var colorValue = swatch.style.backgroundColor;-->
-<!--                var colorBox = document.getElementById('selectedColorBox');-->
-<!--                colorBox.style.backgroundColor = colorValue;-->
-<!--                colorBox.style.display = 'block';-->
-<!--            });-->
-<!--        });-->
-
-<!--        // 눈송이 애니메이션-->
-<!--        const colors = ["#FFB6C1", "#FF69B4", "#87CEEB", "#8A2BE2", "#7FFFD4", "#FFD700", "#FFA07A"];-->
-<!--        const symbols = ["❄", "♥", "✿", "★"];-->
-<!--        function createSnowflake() {-->
-<!--            const flake = document.createElement("div");-->
-<!--            let fallSpeed = 2;-->
-<!--            flake.className = "snowflake";-->
-<!--            flake.style.left = Math.random() * window.innerWidth + "px";-->
-<!--            flake.style.animationDuration = 3 + Math.random() * 5 + "s";-->
-<!--            flake.style.color = colors[Math.floor(Math.random()*colors.length)];-->
-<!--            flake.textContent = symbols[Math.floor(Math.random()*symbols.length)];-->
-<!--            document.body.appendChild(flake);-->
-<!--            setTimeout(() => flake.remove(), 5000);-->
-<!--        }-->
-<!--        setInterval(createSnowflake, 500);-->
-<!--    };-->
-<!--</script>-->
-<!--</body>-->
-<!--</html>-->
-
-
-<!--<!DOCTYPE html>-->
-<!--<html lang="ko" xmlns:th="http://www.thymeleaf.org">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8">-->
-<!--    <title>퍼스널 컬러 분석 결과</title>-->
-<!--    <meta name="_csrf" th:content="${_csrf.token}"/>-->
-<!--    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>-->
-<!--    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
-<!--    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>-->
-
-<!--    <style>-->
-
-<!--        .top { position: relative; min-height: 50vh; }-->
-<!--        .top img, #mask, #out {-->
-<!--            position: absolute; inset: 0;-->
-<!--            width: 100%; height: 100%;-->
-<!--            object-fit: contain;-->
-<!--        }-->
-<!--        #mask, #out { pointer-events: none; }-->
-
-
-<!--        body {-->
-<!--            margin: 0;-->
-<!--            font-family: sans-serif;-->
-<!--            background-image: url("/images/mainpage.png");-->
-<!--        }-->
-<!--        .container {-->
-<!--            display: flex;-->
-<!--            flex-direction: column;-->
-<!--            align-items: center;-->
-<!--            padding-top: 20px;-->
-<!--        }-->
-<!--        .top img {-->
-<!--            margin-top: 10px;-->
-<!--            width: 100%;-->
-<!--            max-height: 50vh;-->
-<!--            object-fit: cover;-->
-<!--            /*margin-bottom: 5px;*/-->
-<!--            border-radius: 4px;-->
-<!--            border: 2px solid black;-->
-
-<!--            /* 이미지가 눈송이보다 위에 오도록 */-->
-<!--            position: relative;-->
-<!--            z-index: 1;-->
-<!--        }-->
-<!--        h1, p { text-align: center; margin: 5px 0; }-->
-
-
-<!--        .btn-group { margin-top: 20px; }-->
-<!--        .btn-group button {-->
-<!--            margin: 0 10px;-->
-<!--            padding: 10px 20px;-->
-<!--            border-radius: 4px;-->
-<!--            border: none;-->
-<!--            font-weight: bold;-->
-<!--            cursor: pointer;-->
-<!--            position: relative;-->
-<!--            transition: all 0.3s;-->
-<!--        }-->
-<!--        .prev-btn { background: #fff; color: #000; border: 2px solid #000; }-->
-<!--        .prev-btn:hover { background: #000; color: #fff; }-->
-<!--        .next-btn { background: #000; color: #fff; }-->
-<!--        .next-btn:hover { background: #fff; color: #000; border: 2px solid #000; }-->
-
-<!--        button::after {-->
-<!--            content: attr(data-tooltip);-->
-<!--            position: absolute;-->
-<!--            bottom: 125%; left: 50%;-->
-<!--            transform: translateX(-50%);-->
-<!--            background: #555; color: #fff;-->
-<!--            padding: 5px 10px; border-radius: 4px;-->
-<!--            font-size: 12px; white-space: nowrap;-->
-<!--            opacity: 0; visibility: hidden;-->
-<!--            transition: 0.3s; z-index: 1000;-->
-<!--        }-->
-<!--        button:hover::after { opacity: 1; visibility: visible; }-->
-
-
-<!--        .snowflake {-->
-<!--            position: fixed; top: -10px; font-size: 18px;-->
-<!--            animation: fall linear infinite; z-index: 9999;-->
-<!--        }-->
-<!--        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }-->
-
-
-<!--        .color-swatch {-->
-<!--            width: 50px; height: 50px;-->
-<!--            border: 1px solid #ddd; border-radius: 4px;-->
-<!--            cursor: pointer; transition: transform .2s, border-color .2s;-->
-<!--        }-->
-<!--        .color-swatch:hover { transform: scale(1.1); border-color: #aaa; }-->
-
-<!--        /* 그래프 섹션 스타일 */-->
-<!--        .charts-section {-->
-<!--            margin: 30px 0;-->
-<!--            padding: 20px;-->
-<!--            background: rgba(255, 255, 255, 0.9);-->
-<!--            border-radius: 10px;-->
-<!--            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);-->
-<!--        }-->
-
-<!--        .chart-container {-->
-<!--            margin: 20px 0;-->
-<!--            padding: 15px;-->
-<!--            background: white;-->
-<!--            border-radius: 8px;-->
-<!--            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);-->
-<!--        }-->
-
-<!--        .chart-title {-->
-<!--            font-size: 18px;-->
-<!--            font-weight: bold;-->
-<!--            margin-bottom: 15px;-->
-<!--            color: #333;-->
-<!--            text-align: center;-->
-<!--        }-->
-
-<!--        .chart-grid {-->
-<!--            display: grid;-->
-<!--            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));-->
-<!--            gap: 20px;-->
-<!--            margin-top: 20px;-->
-<!--        }-->
-
-<!--        .color-info {-->
-<!--            display: flex;-->
-<!--            align-items: center;-->
-<!--            margin: 5px 0;-->
-<!--            padding: 5px;-->
-<!--            background: #f8f9fa;-->
-<!--            border-radius: 4px;-->
-<!--        }-->
-
-<!--        .color-preview {-->
-<!--            width: 20px;-->
-<!--            height: 20px;-->
-<!--            border-radius: 50%;-->
-<!--            margin-right: 10px;-->
-<!--            border: 1px solid #ddd;-->
-<!--        }-->
-
-<!--        .color-values {-->
-<!--            font-family: monospace;-->
-<!--            font-size: 12px;-->
-<!--            color: #666;-->
-<!--        }-->
-<!--    </style>-->
-<!--</head>-->
-<!--<body>-->
-
-<!--<div class="container">-->
-<!--    <div class="top" id="stage">-->
-
-<!--        <img id="resultImage" th:src="@{'/uploads/' + ${analysis.storedFileName}}" alt="분석된 이미지">-->
-<!--        <canvas id="mask"></canvas>-->
-<!--        <canvas id="out"></canvas>-->
-<!--    </div>-->
-
-<!--    <h1 th:text="${analysis.colorType.displayName} + ' - 당신의 퍼스널 컬러입니다'"></h1>-->
-<!--    <p th:text="${description}"></p>-->
-<!--    <p>신뢰도: <span th:text="${confidence}"></span>%</p>-->
-
-<!--    <div th:if="${recommendations}">-->
-<!--        <h3>추천 색상:</h3>-->
-<!--        <div style="display:flex; gap:10px; flex-wrap:wrap;">-->
-<!--            <div th:each="color : ${recommendations}"-->
-<!--                 class="color-swatch"-->
-<!--                 th:title="${color}"-->
-<!--                 th:style="'background-color:' + ${color}">-->
-<!--            </div>-->
-<!--        </div>-->
-<!--        <p style="text-align:center; color:#666; margin-top:8px;">-->
-<!--            사진 위를 한 번 클릭해 상의의 기준색을 샘플한 다음, 추천 색상을 클릭하세요.-->
-<!--        </p>-->
-<!--    </div>-->
-
-<!--    &lt;!&ndash; 그래프 섹션 추가 &ndash;&gt;-->
-<!--    <div class="charts-section">-->
-<!--        <h2 style="text-align: center; margin-bottom: 30px; color: #333;">📊 상세 분석 결과</h2>-->
-
-<!--        <div class="chart-grid">-->
-<!--            &lt;!&ndash; 신뢰도 차트 &ndash;&gt;-->
-<!--            <div class="chart-container">-->
-<!--                <div class="chart-title">신뢰도 분석</div>-->
-<!--                <canvas id="confidenceChart" width="300" height="200"></canvas>-->
-<!--            </div>-->
-
-
-<!--            &lt;!&ndash; 퍼스널 컬러 타입 비교 &ndash;&gt;-->
-<!--            <div class="chart-container">-->
-<!--                <div class="chart-title">퍼스널 컬러 타입 비교</div>-->
-<!--                <canvas id="typeComparisonChart" width="300" height="200"></canvas>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-<!--    <div class="btn-group">-->
-<!--        <button class="prev-btn"-->
-<!--                th:onclick="|window.location.href='@{/upload}'|"-->
-<!--                data-tooltip="사진 업로드로 돌아가기">이전</button>-->
-<!--        <button class="next-btn"-->
-<!--                onclick="location.href='shop.html'"-->
-<!--                data-tooltip="쇼핑 페이지로 이동">다음</button>-->
-<!--    </div>-->
-<!--</div>-->
-
-
-<!--<script>-->
-<!--    // 그래프 초기화-->
-<!--    window.onload = function() {-->
-<!--        initializeCharts();-->
-<!--    };-->
-
-<!--    const SNOW_COLORS = ["#FFB6C1", "#FF69B4", "#87CEEB", "#8A2BE2", "#7FFFD4", "#FFD700", "#FFA07A"];-->
-<!--    const SNOW_SYMBOLS = ["❄", "♥", "✿", "★"];-->
-<!--    function createSnowflake() {-->
-<!--        const flake = document.createElement("div");-->
-<!--        flake.className = "snowflake";-->
-<!--        flake.style.left = Math.random() * window.innerWidth + "px";-->
-<!--        flake.style.animationDuration = 8 + Math.random() * 8 + "s"; // 8~16s-->
-<!--        flake.style.color = SNOW_COLORS[Math.floor(Math.random() * SNOW_COLORS.length)];-->
-<!--        flake.textContent = SNOW_SYMBOLS[Math.floor(Math.random() * SNOW_SYMBOLS.length)];-->
-<!--        document.body.appendChild(flake);-->
-<!--        setTimeout(() => flake.remove(), 5000);-->
-<!--    }-->
-<!--    setInterval(createSnowflake, 500);-->
-
-
-<!--    (function () {-->
-<!--        const imgEl = document.getElementById('resultImage');-->
-<!--        const stage = document.getElementById('stage');-->
-<!--        const mask = document.getElementById('mask');-->
-<!--        const out = document.getElementById('out');-->
-<!--        if (!imgEl || !stage || !mask || !out) return;-->
-
-<!--        let picked = null;                 // {h,s,l} 샘플 기준색-->
-<!--        let ready = false;                 // 이미지/캔버스 준비 여부-->
-<!--        let cache = { iw:0, ih:0, cw:0, ch:0, scale:1 };-->
-
-
-<!--        const THRESHOLD = 32;-->
-<!--        const STRENGTH  = 0.85;-->
-
-
-<!--        const clamp = (v, min, max) => v < min ? min : (v > max ? max : v);-->
-<!--        function rgbToHsl(r, g, b) {-->
-<!--            r/=255; g/=255; b/=255;-->
-<!--            const max = Math.max(r,g,b), min = Math.min(r,g,b);-->
-<!--            let h, s, l = (max+min)/2;-->
-<!--            if (max === min) { h = s = 0; }-->
-<!--            else {-->
-<!--                const d = max - min;-->
-<!--                s = l > 0.5 ? d/(2 - max - min) : d/(max + min);-->
-<!--                switch (max) {-->
-<!--                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;-->
-<!--                    case g: h = (b - r) / d + 2; break;-->
-<!--                    case b: h = (r - g) / d + 4; break;-->
-<!--                }-->
-<!--                h *= 60;-->
-<!--            }-->
-<!--            return [h, s, l];-->
-<!--        }-->
-<!--        function hexToRgb(hex) {-->
-<!--            if (!hex) return [0,0,0];-->
-<!--            hex = hex.toString().trim();-->
-<!--            if (hex.startsWith('rgb')) {-->
-<!--                const m = hex.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/i);-->
-<!--                if (m) return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];-->
-<!--            }-->
-<!--            hex = hex.replace('#','');-->
-<!--            if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');-->
-<!--            const n = parseInt(hex,16);-->
-<!--            return [(n>>16)&255, (n>>8)&255, n&255];-->
-<!--        }-->
-
-
-<!--        function sizeCanvases() {-->
-<!--            if (!imgEl.naturalWidth) return;-->
-<!--            const iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;-->
-<!--            const targetW = Math.min(900, iw);-->
-<!--            const targetH = Math.round(targetW * ih / iw);-->
-<!--            [mask, out].forEach(c => { c.width = targetW; c.height = targetH; });-->
-<!--            cache = { iw, ih, cw: targetW, ch: targetH, scale: targetW / iw };-->
-<!--            ready = true;-->
-<!--        }-->
-<!--        if (imgEl.complete) sizeCanvases();-->
-<!--        imgEl.addEventListener('load', sizeCanvases);-->
-
-
-<!--        stage.addEventListener('click', (e) => {-->
-<!--            if (!ready) return;-->
-<!--            const rect = stage.getBoundingClientRect();-->
-<!--            const xr = (e.clientX - rect.left) / rect.width;-->
-<!--            const yr = (e.clientY - rect.top) / rect.height;-->
-<!--            const cx = Math.round(xr * out.width);-->
-<!--            const cy = Math.round(yr * out.height);-->
-
-<!--            const tmp = document.createElement('canvas');-->
-<!--            tmp.width = out.width; tmp.height = out.height;-->
-<!--            const tctx = tmp.getContext('2d');-->
-<!--            tctx.drawImage(imgEl, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);-->
-<!--            const px = tctx.getImageData(cx, cy, 1, 1).data;-->
-<!--            const [h, s, l] = rgbToHsl(px[0], px[1], px[2]);-->
-<!--            picked = { h, s, l };-->
-<!--            buildMask();-->
-<!--        });-->
-
-
-<!--        function bindSwatches() {-->
-<!--            document.querySelectorAll('.color-swatch').forEach(el => {-->
-<!--                el.addEventListener('click', () => {-->
-<!--                    const bg = getComputedStyle(el).backgroundColor;-->
-<!--                    applyRecolor(bg);-->
-<!--                });-->
-<!--            });-->
-<!--        }-->
-<!--        window.addEventListener('load', bindSwatches);-->
-
-<!--        // 마스크 생성(샘플색과 유사한 영역만)-->
-<!--        function buildMask() {-->
-<!--            if (!picked || !ready) return;-->
-<!--            const t = document.createElement('canvas');-->
-<!--            t.width = out.width; t.height = out.height;-->
-<!--            const ctx = t.getContext('2d');-->
-<!--            ctx.drawImage(imgEl, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);-->
-
-<!--            const src = ctx.getImageData(0, 0, out.width, out.height);-->
-<!--            const d = src.data;-->
-
-<!--            const mctx = mask.getContext('2d');-->
-<!--            const maskData = mctx.createImageData(out.width, out.height);-->
-<!--            const md = maskData.data;-->
-
-<!--            for (let i = 0; i < d.length; i += 4) {-->
-<!--                const r = d[i], g = d[i+1], b = d[i+2], a = d[i+3];-->
-<!--                if (a === 0) { md[i+3] = 0; continue; }-->
-
-<!--                const [h, s, l] = rgbToHsl(r, g, b);-->
-<!--                let dh = Math.abs(h - picked.h); if (dh > 180) dh = 360 - dh;-->
-<!--                const ds = Math.abs(s - picked.s) * 100;-->
-<!--                const dl = Math.abs(l - picked.l) * 100;-->
-
-<!--                const dist = dh * 0.7 + ds * 0.2 + dl * 0.1;-->
-<!--                const inside = dist < THRESHOLD && s > 0.12 && l > 0.05 && l < 0.95;-->
-
-<!--                md[i]   = 16;-->
-<!--                md[i+1] = 185;-->
-<!--                md[i+2] = 129;-->
-<!--                md[i+3] = inside ? 90 : 0;-->
-<!--            }-->
-<!--            mctx.putImageData(maskData, 0, 0);-->
-<!--        }-->
-
-
-<!--        function applyRecolor(targetColor) {-->
-<!--            if (!picked) { alert('이미지 위를 클릭해서 상의 기준색을 먼저 샘플하세요.'); return; }-->
-<!--            const [tr, tg, tb] = hexToRgb(targetColor);-->
-
-<!--            const octx = out.getContext('2d');-->
-<!--            octx.clearRect(0, 0, out.width, out.height);-->
-<!--            octx.drawImage(imgEl, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);-->
-<!--            const imgData = octx.getImageData(0, 0, out.width, out.height);-->
-<!--            const d = imgData.data;-->
-
-<!--            buildMask();-->
-<!--            const mctx = mask.getContext('2d');-->
-<!--            const m = mctx.getImageData(0, 0, mask.width, mask.height).data;-->
-
-<!--            for (let i = 0; i < d.length; i += 4) {-->
-<!--                if (m[i+3] > 0) {-->
-<!--                    const r = d[i], g = d[i+1], b = d[i+2];-->
-<!--                    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;-->
-<!--                    const rr = tr * lum, gg = tg * lum, bb = tb * lum;-->
-<!--                    d[i]   = clamp(Math.round(rr * STRENGTH + r * (1 - STRENGTH)), 0, 255);-->
-<!--                    d[i+1] = clamp(Math.round(gg * STRENGTH + g * (1 - STRENGTH)), 0, 255);-->
-<!--                    d[i+2] = clamp(Math.round(bb * STRENGTH + b * (1 - STRENGTH)), 0, 255);-->
-<!--                }-->
-<!--            }-->
-<!--            octx.putImageData(imgData, 0, 0);-->
-<!--        }-->
-<!--    })();-->
-
-<!--    // 그래프 초기화 함수-->
-<!--    function initializeCharts() {-->
-<!--        // 서버에서 전달된 데이터 가져오기-->
-<!--        const confidence = /*[[${confidence}]]*/ 38;-->
-<!--        const recommendations = /*[[${recommendations}]]*/ [];-->
-<!--        const colorType = /*[[${analysis.colorType}]]*/ 'SUMMER_COOL';-->
-<!--        const typeComparisonData = /*[[${typeComparisonData}]]*/ {};-->
-
-<!--        // 1. 신뢰도 차트 (도넛 차트)-->
-<!--        createConfidenceChart(confidence);-->
-
-<!--        // 2. 퍼스널 컬러 타입 비교-->
-<!--        createTypeComparisonChart(colorType, confidence, typeComparisonData);-->
-<!--    }-->
-
-<!--    // 신뢰도 도넛 차트-->
-<!--    function createConfidenceChart(confidence) {-->
-<!--        const ctx = document.getElementById('confidenceChart').getContext('2d');-->
-<!--        new Chart(ctx, {-->
-<!--            type: 'doughnut',-->
-<!--            data: {-->
-<!--                labels: ['신뢰도', '불확실성'],-->
-<!--                datasets: [{-->
-<!--                    data: [confidence, 100 - confidence],-->
-<!--                    backgroundColor: [-->
-<!--                        confidence > 70 ? '#4CAF50' : confidence > 50 ? '#FF9800' : '#F44336',-->
-<!--                        '#E0E0E0'-->
-<!--                    ],-->
-<!--                    borderWidth: 2,-->
-<!--                    borderColor: '#fff'-->
-<!--                }]-->
-<!--            },-->
-<!--            options: {-->
-<!--                responsive: true,-->
-<!--                plugins: {-->
-<!--                    legend: {-->
-<!--                        position: 'bottom'-->
-<!--                    },-->
-<!--                    tooltip: {-->
-<!--                        callbacks: {-->
-<!--                            label: function(context) {-->
-<!--                                return context.label + ': ' + context.parsed + '%';-->
-<!--                            }-->
-<!--                        }-->
-<!--                    }-->
-<!--                }-->
-<!--            }-->
-<!--        });-->
-<!--    }-->
-
-
-<!--    // 퍼스널 컬러 타입 비교-->
-<!--    function createTypeComparisonChart(currentType, confidence, typeComparisonData) {-->
-<!--        const ctx = document.getElementById('typeComparisonChart').getContext('2d');-->
-
-<!--        let typeLabels, similarities;-->
-
-<!--        // 서버에서 전달된 비교 데이터가 있으면 사용-->
-<!--        if (typeComparisonData && typeComparisonData.similarities && typeComparisonData.typeLabels) {-->
-<!--            typeLabels = Object.values(typeComparisonData.typeLabels);-->
-<!--            similarities = Object.values(typeComparisonData.similarities).map(val => val * 100);-->
-<!--        } else {-->
-<!--            // 기본 방식으로 처리-->
-<!--            const types = ['SPRING', 'SUMMER', 'AUTUMN', 'WINTER'];-->
-<!--            typeLabels = ['봄 웜톤', '여름 쿨톤', '가을 웜톤', '겨울 쿨톤'];-->
-<!--            similarities = types.map(type => {-->
-<!--                if (type === currentType) return confidence;-->
-<!--                return Math.random() * 30 + 10; // 10-40% 범위의 랜덤 값-->
-<!--            });-->
-<!--        }-->
-
-<!--        new Chart(ctx, {-->
-<!--            type: 'radar',-->
-<!--            data: {-->
-<!--                labels: typeLabels,-->
-<!--                datasets: [{-->
-<!--                    label: '유사도 (%)',-->
-<!--                    data: similarities,-->
-<!--                    backgroundColor: 'rgba(54, 162, 235, 0.2)',-->
-<!--                    borderColor: 'rgba(54, 162, 235, 1)',-->
-<!--                    borderWidth: 2,-->
-<!--                    pointBackgroundColor: 'rgba(54, 162, 235, 1)'-->
-<!--                }]-->
-<!--            },-->
-<!--            options: {-->
-<!--                responsive: true,-->
-<!--                scales: {-->
-<!--                    r: {-->
-<!--                        beginAtZero: true,-->
-<!--                        max: 100-->
-<!--                    }-->
-<!--                }-->
-<!--            }-->
-<!--        });-->
-<!--    }-->
-
-<!--    // 유틸리티 함수들-->
-<!--    function hexToRgb(hex) {-->
-<!--        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);-->
-<!--        return result ? {-->
-<!--            r: parseInt(result[1], 16),-->
-<!--            g: parseInt(result[2], 16),-->
-<!--            b: parseInt(result[3], 16)-->
-<!--        } : null;-->
-<!--    }-->
-
-<!--    function rgbToHsv(r, g, b) {-->
-<!--        r /= 255;-->
-<!--        g /= 255;-->
-<!--        b /= 255;-->
-
-<!--        const max = Math.max(r, g, b);-->
-<!--        const min = Math.min(r, g, b);-->
-<!--        const diff = max - min;-->
-
-<!--        let h = 0;-->
-<!--        if (diff !== 0) {-->
-<!--            if (max === r) h = ((g - b) / diff) % 6;-->
-<!--            else if (max === g) h = (b - r) / diff + 2;-->
-<!--            else h = (r - g) / diff + 4;-->
-<!--        }-->
-<!--        h = Math.round(h * 60);-->
-<!--        if (h < 0) h += 360;-->
-
-<!--        const s = max === 0 ? 0 : Math.round((diff / max) * 100);-->
-<!--        const v = Math.round(max * 100);-->
-
-<!--        return { h, s, v };-->
-<!--    }-->
-<!--</script>-->
-
-<!--</body>-->
-<!--</html>-->
-
-
-
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -708,7 +6,6 @@
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
     <style>
         .top {
@@ -716,9 +13,8 @@
             width: 100%;
             max-width: 500px;
             margin: 0 auto;
-            aspect-ratio: 1 / 1; /* 정사각형, 필요시 비율 맞게 조정 */
+            aspect-ratio: 1 / 1;
         }
-
         .top img {
             width: 100%;
             height: auto;
@@ -726,9 +22,11 @@
             border-radius: 4px;
             border: 2px solid black;
             z-index: 1;
-            position: relative; /* 기본값 */
+            position: relative;
+            margin-top: 10px;
+            max-height: 50vh;
+            object-fit: cover;
         }
-
         #mask, #out {
             position: absolute;
             left: 0; top: 0;
@@ -738,33 +36,17 @@
         }
         #out { z-index: 3; }
 
-
         body {
             margin: 0;
             font-family: sans-serif;
             background-image: url("/images/mainpage.png");
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            min-height: 100vh;
         }
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px;
-        }
-        .top img {
-            margin-top: 10px;
-            width: 100%;
-            max-height: 50vh;
-            object-fit: cover;
-            /*margin-bottom: 5px;*/
-            border-radius: 4px;
-            border: 2px solid black;
-
-            /* 이미지가 눈송이보다 위에 오도록 */
-            position: relative;
-            z-index: 2;
-        }
+        .container { display: flex; flex-direction: column; align-items: center; padding-top: 20px; }
         h1, p { text-align: center; margin: 5px 0; }
-
 
         .btn-group { margin-top: 20px; }
         .btn-group button {
@@ -784,24 +66,17 @@
 
         button::after {
             content: attr(data-tooltip);
-            position: absolute;
-            bottom: 125%; left: 50%;
+            position: absolute; bottom: 125%; left: 50%;
             transform: translateX(-50%);
             background: #555; color: #fff;
             padding: 5px 10px; border-radius: 4px;
             font-size: 12px; white-space: nowrap;
-            opacity: 0; visibility: hidden;
-            transition: 0.3s; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: 0.3s; z-index: 1000;
         }
         button:hover::after { opacity: 1; visibility: visible; }
 
-
-        .snowflake {
-            position: fixed; top: -10px; font-size: 18px;
-            animation: fall linear infinite; z-index: 9999;
-        }
+        .snowflake { position: fixed; top: -10px; font-size: 18px; animation: fall linear infinite; z-index: 9999; }
         @keyframes fall { to { transform: translateY(100vh) rotate(360deg); } }
-
 
         .color-swatch {
             width: 50px; height: 50px;
@@ -810,67 +85,45 @@
         }
         .color-swatch:hover { transform: scale(1.1); border-color: #aaa; }
 
-        /* 그래프 섹션 스타일 */
+        /* 상세분석(차트) */
         .charts-section {
-            margin: 30px 0;
-            padding: 20px;
+            position: relative;
+            margin: 30px 0; padding: 20px;
             background: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: min(900px, 92vw);
         }
-
         .chart-container {
-            margin: 20px 0;
-            padding: 15px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 20px 0; padding: 15px; background: #fff;
+            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; text-align: center; }
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+
+        /* 추천 설명 박스 */
+        .result-box {
+            position: relative;
+            background-color: #f4f4f4; border: 1px solid #ccc;
+            padding: 20px; width: 80%; max-width: 600px;
+            margin: 20px auto; border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            font-size: 14px; color: #333;
         }
 
-        .chart-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #333;
-            text-align: center;
+        /* 닫기 버튼 공통 */
+        .close-btn {
+            position: absolute; top: 8px; right: 8px;
+            background: #eee; color: #333; border: 1px solid #bbb;
+            border-radius: 16px; padding: 6px 10px; cursor: pointer;
+            font-size: 12px; line-height: 1; transition: background .2s;
         }
-
-        .chart-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .color-info {
-            display: flex;
-            align-items: center;
-            margin: 5px 0;
-            padding: 5px;
-            background: #f8f9fa;
-            border-radius: 4px;
-        }
-
-        .color-preview {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin-right: 10px;
-            border: 1px solid #ddd;
-        }
-
-        .color-values {
-            font-family: monospace;
-            font-size: 12px;
-            color: #666;
-        }
+        .close-btn:hover { background: #ddd; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="top" id="stage">
-
         <img id="resultImage" th:src="@{'/files/' + ${analysis.storedFileName}}" alt=""/>
         <canvas id="mask"></canvas>
         <canvas id="out"></canvas>
@@ -894,19 +147,21 @@
         </p>
     </div>
 
-    <!-- 그래프 섹션 추가 -->
-    <div class="charts-section">
-        <h2 style="text-align: center; margin-bottom: 30px; color: #333;">📊 상세 분석 결과</h2>
+    <!-- 신뢰도 분석/추천 버튼 -->
+    <div class="btn-group" style="margin-top:16px;">
+        <button id="toggleBtn" class="next-btn" onclick="openAnalysis()" data-tooltip="신뢰도 분석">신뢰도 분석</button>
+        <button id="recommendBtn" class="prev-btn" onclick="showToneDescription()" data-tooltip="추천">추천</button>
+    </div>
 
+    <!-- 상세분석: 처음에는 숨김 -->
+    <div id="analysisSection" class="charts-section" style="display:none;">
+        <button type="button" class="close-btn" onclick="closeAnalysis()">신뢰도 분석 닫기</button>
+        <h2 style="text-align: center; margin-bottom: 30px; color: #333;">📊 상세 분석 결과</h2>
         <div class="chart-grid">
-            <!-- 신뢰도 차트 -->
             <div class="chart-container">
                 <div class="chart-title">신뢰도 분석</div>
                 <canvas id="confidenceChart" width="300" height="200"></canvas>
             </div>
-
-
-            <!-- 퍼스널 컬러 타입 비교 -->
             <div class="chart-container">
                 <div class="chart-title">퍼스널 컬러 타입 비교</div>
                 <canvas id="typeComparisonChart" width="300" height="200"></canvas>
@@ -914,6 +169,13 @@
         </div>
     </div>
 
+    <!-- toneDescription 출력 박스: 처음에는 숨김 -->
+    <div id="toneDescriptionBox" class="result-box" style="display:none;">
+        <button type="button" class="close-btn" onclick="closeToneDescription()">추천 닫기</button>
+        <!-- setToneDescription()가 내용 채움 -->
+    </div>
+
+    <!-- 페이지 네비게이션 -->
     <div class="btn-group">
         <button class="prev-btn"
                 th:onclick="|window.location.href='@{/upload}'|"
@@ -924,39 +186,37 @@
     </div>
 </div>
 
-
 <script th:inline="javascript">
     /*<![CDATA[*/
+    // 이미지/마스크 로딩
     const maskDataUri = '[[${segmentationMask}]]';
     const imgEl = document.getElementById('resultImage');
     const maskCanvas = document.getElementById('mask');
     const outCanvas = document.getElementById('out');
 
     imgEl.addEventListener('load', () => {
-        // 캔버스 크기 동기화
         [maskCanvas, outCanvas].forEach(c => {
             c.width = imgEl.width;
             c.height = imgEl.height;
             c.style.width = imgEl.width+'px';
             c.style.height = imgEl.height+'px';
         });
-
-        // 세그멘테이션 마스크 그리기
         const ctx = maskCanvas.getContext('2d');
         const mImg = new Image();
         mImg.onload = () => ctx.drawImage(mImg, 0, 0);
         mImg.src = maskDataUri;
     });
 
-    // 전역 리컬러링 함수: 마스크 픽셀 255 위치만 리컬러
+    // 추천 색상 리컬러
     window.applyRecolor = function(targetColor) {
         const imgCtx = outCanvas.getContext('2d');
         imgCtx.clearRect(0,0,outCanvas.width,outCanvas.height);
         imgCtx.drawImage(imgEl, 0,0,outCanvas.width,outCanvas.height);
         const imgData = imgCtx.getImageData(0,0,outCanvas.width,outCanvas.height);
-        const maskData = maskCanvas.getContext('2d')
-            .getImageData(0,0,maskCanvas.width,maskCanvas.height).data;
-        const [tr,tg,tb] = hexToRgb(targetColor);
+        const maskData = maskCanvas.getContext('2d').getImageData(0,0,maskCanvas.width,maskCanvas.height).data;
+
+        const rgb = hexToRgb(targetColor);
+        const tr = rgb ? rgb.r : 0, tg = rgb ? rgb.g : 0, tb = rgb ? rgb.b : 0;
 
         for (let i=0; i<maskData.length; i+=4) {
             if (maskData[i] > 128) {
@@ -971,92 +231,109 @@
         imgCtx.putImageData(imgData,0,0);
     };
 
-        function openAnalysis() {
-        document.getElementById("analysisSection").style.display = "block";
-        document.getElementById("toggleBtn").style.display = "none"; // 버튼 숨김
-        setToneDescription();
-        initializeCharts();
-    }
-        function closeAnalysis() {
-        document.getElementById("analysisSection").style.display = "none";
-        document.getElementById("toggleBtn").style.display = "inline-block"; // 다시 보기 버튼 표시
-    }
-
-        function setToneDescription() {
-        const colorType =  'spring';
+    // UI 토글
+    function openAnalysis() {
+        const section = document.getElementById("analysisSection");
+        if (section) section.style.display = "block";
         const box = document.getElementById("toneDescriptionBox");
-
-        const toneDescriptions = {
-        "spring": {
-        이름: "🌸 봄 웜톤",
-        특징: "밝고 투명, 따뜻하고 생기 있는 컬러.",
-        추천: "라이트 옐로우, 아이보리, 크림 베이지 / 코랄, 피치, 살몬 핑크 / 민트, 아쿠아, 터키옥",
-        피해야: "블랙, 다크브라운, 네이비 / 푸른 보라, 아이시 블루",
-        헤어: "라이트 브라운, 허니 브라운, 골드 브라운",
-        메이크업: "코랄/피치 립, 오렌지 브라운 섀도, 골드 펄 하이라이터"
-    },
-        "summer": {
-        이름: "🌊 여름 쿨톤",
-        특징: "차분하고 부드러운 파스텔톤, 흐릿하고 소프트한 컬러.",
-        추천: "라벤더, 소프트 핑크, 베이비 블루, 민트 / 쿨 그레이, 퓨어 화이트 / 체리 핑크, 로즈, 딥 라즈베리",
-        피해야: "머스터드, 올리브, 오렌지 레드 / 블랙처럼 강한 대비 색상",
-        헤어: "애쉬 브라운, 소프트 블랙, 네이비 블랙",
-        메이크업: "로즈/핑크 립, 라벤더·쿨브라운 섀도, 실버 펄"
-    },
-        "autumn": {
-        이름: "🍁 가을 웜톤",
-        특징: "깊고 그윽하며 따뜻한 가을 숲·대지 색.",
-        추천: "머스터드, 카멜, 코코아, 초콜릿 브라운 / 테라코타, 브릭 레드, 버건디 / 올리브, 카키, 포레스트 그린",
-        피해야: "파스텔톤, 퓨어 화이트, 형광색",
-        헤어: "다크 브라운, 모카, 레드 브라운",
-        메이크업: "브릭·테라코타 립, 브론즈 섀도, 골드 펄"
-    },
-        "winter": {
-        이름: "❄ 겨울 쿨톤",
-        특징: "선명하고 차갑고 강한 대비, 고채도 & 딥 컬러.",
-        추천: "블랙, 퓨어 화이트 / 푸시아, 딥 레드, 체리, 루비 / 코발트 블루, 에메랄드, 퍼플",
-        피해야: "머스터드, 카멜, 오렌지 / 톤 다운된 베이지, 올리브",
-        헤어: "블랙, 블루블랙, 다크 애쉬",
-        메이크업: "레드/푸시아 립, 스모키 블랙 아이, 화이트 하이라이터"
-    }
-    };
-
-        const tone = toneDescriptions[colorType];
-        if (tone) {
-        box.innerHTML = `
-<h3>${tone.이름}</h3>
-<p><b>✨ 특징:</b> ${tone.특징}</p>
-<p><b>🎨 추천 색상:</b> ${tone.추천}</p>
-<p><b>🚫 피해야 할 색상:</b> ${tone.피해야}</p>
-<p><b>💇 헤어 색상:</b> ${tone.헤어}</p>
-<p><b>💄 메이크업:</b> ${tone.메이크업}</p>
-      `;
-    }
-    }
-    function createTypeComparisonChart(currentType, confidence) {
-        const ctx = document.getElementById('typeComparisonChart').getContext('2d');
-        const typeLabels = ['봄 웜톤','여름 쿨톤','가을 웜톤','겨울 쿨톤'];
-        const types = ['spring','summer','autumn','winter'];
-        const similarities = types.map(t=>t===currentType?confidence:Math.random()*30+10);
-        new Chart(ctx,{ type:'radar',
-        data:{ labels:typeLabels, datasets:[{label:'유사도(%)',data:similarities}] },
-        options:{ scales:{ r:{ beginAtZero:true, max:100 } } }
-    });
-    }
-
-    /*]]>*/
-    // 그래프 초기화
-    window.onload = function() {
+        if (box) box.style.display = "none";
+        const t = document.getElementById("toggleBtn");
+        if (t) t.style.display = "none";
         initializeCharts();
-    };
+    }
+    function closeAnalysis() {
+        // 섹션 숨기기
+        const section = document.getElementById("analysisSection");
+        if (section) section.style.display = "none";
+        // 열기 버튼 다시 표시
+        const t = document.getElementById("toggleBtn");
+        if (t) t.style.display = "inline-block";
+        // 차트 정리
+        if (window.__confidenceChart) { window.__confidenceChart.destroy(); window.__confidenceChart = null; }
+        if (window.__typeChart) { window.__typeChart.destroy(); window.__typeChart = null; }
+    }
 
+    function showToneDescription() {
+        setToneDescription();
+        const box = document.getElementById("toneDescriptionBox");
+        if (box) box.style.display = "block";
+    }
+    function closeToneDescription() {
+        const box = document.getElementById("toneDescriptionBox");
+        if (box) box.style.display = "none";
+    }
+
+    // toneDescription 렌더링
+    function setToneDescription() {
+        const rawType = ('[[${analysis.colorType}]]' || '').toString().toLowerCase();
+        const norm = rawType.includes('spring') ? 'spring'
+            : rawType.includes('summer') ? 'summer'
+                : rawType.includes('autumn') ? 'autumn'
+                    : rawType.includes('winter') ? 'winter'
+                        : '';
+
+        const box = document.getElementById("toneDescriptionBox");
+        const toneDescriptions = {
+            "spring": {
+                이름: "🌸 봄 웜톤",
+                특징: "밝고 투명, 따뜻하고 생기 있는 컬러.",
+                추천: "라이트 옐로우, 아이보리, 크림 베이지 / 코랄, 피치, 살몬 핑크 / 민트, 아쿠아, 터키옥",
+                피해야: "블랙, 다크브라운, 네이비 / 푸른 보라, 아이시 블루",
+                헤어: "라이트 브라운, 허니 브라운, 골드 브라운",
+                메이크업: "코랄/피치 립, 오렌지 브라운 섀도, 골드 펄 하이라이터"
+            },
+            "summer": {
+                이름: "🌊 여름 쿨톤",
+                특징: "차분하고 부드러운 파스텔톤, 흐릿하고 소프트한 컬러.",
+                추천: "라벤더, 소프트 핑크, 베이비 블루, 민트 / 쿨 그레이, 퓨어 화이트 / 체리 핑크, 로즈, 딥 라즈베리",
+                피해야: "머스터드, 올리브, 오렌지 레드 / 블랙처럼 강한 대비 색상",
+                헤어: "애쉬 브라운, 소프트 블랙, 네이비 블랙",
+                메이크업: "로즈/핑크 립, 라벤더·쿨브라운 섀도, 실버 펄"
+            },
+            "autumn": {
+                이름: "🍁 가을 웜톤",
+                특징: "깊고 그윽하며 따뜻한 가을 숲·대지 색.",
+                추천: "머스터드, 카멜, 코코아, 초콜릿 브라운 / 테라코타, 브릭 레드, 버건디 / 올리브, 카키, 포레스트 그린",
+                피해야: "파스텔톤, 퓨어 화이트, 형광색",
+                헤어: "다크 브라운, 모카, 레드 브라운",
+                메이크업: "브릭·테라코타 립, 브론즈 섀도, 골드 펄"
+            },
+            "winter": {
+                이름: "❄ 겨울 쿨톤",
+                특징: "선명하고 차갑고 강한 대비, 고채도 & 딥 컬러.",
+                추천: "블랙, 퓨어 화이트 / 푸시아, 딥 레드, 체리, 루비 / 코발트 블루, 에메랄드, 퍼플",
+                피해야: "머스터드, 카멜, 오렌지 / 톤 다운된 베이지, 올리브",
+                헤어: "블랙, 블루블랙, 다크 애쉬",
+                메이크업: "레드/푸시아 립, 스모키 블랙 아이, 화이트 하이라이터"
+            }
+        };
+
+        if (!box) return;
+        const tone = toneDescriptions[norm];
+        if (!tone) {
+            box.innerHTML = "<p>추천 설명을 찾을 수 없습니다.</p>";
+            return;
+        }
+
+        box.innerHTML = `
+            <button type="button" class="close-btn" onclick="closeToneDescription()">추천 닫기</button>
+            <h3>${tone.이름}</h3>
+            <p><b>특징:</b> ${tone.특징}</p>
+            <p><b>추천 색상:</b> ${tone.추천}</p>
+            <p><b>피해야 할 색상:</b> ${tone.피해야}</p>
+            <p><b>헤어 색상:</b> ${tone.헤어}</p>
+            <p><b>메이크업:</b> ${tone.메이크업}</p>
+        `;
+    }
+
+    // 눈송이 장식
     const SNOW_COLORS = ["#FFB6C1", "#FF69B4", "#87CEEB", "#8A2BE2", "#7FFFD4", "#FFD700", "#FFA07A"];
     const SNOW_SYMBOLS = ["❄", "♥", "✿", "★"];
     function createSnowflake() {
         const flake = document.createElement("div");
         flake.className = "snowflake";
         flake.style.left = Math.random() * window.innerWidth + "px";
-        flake.style.animationDuration = 8 + Math.random() * 8 + "s"; // 8~16s
+        flake.style.animationDuration = 8 + Math.random() * 8 + "s";
         flake.style.color = SNOW_COLORS[Math.floor(Math.random() * SNOW_COLORS.length)];
         flake.textContent = SNOW_SYMBOLS[Math.floor(Math.random() * SNOW_SYMBOLS.length)];
         document.body.appendChild(flake);
@@ -1064,22 +341,17 @@
     }
     setInterval(createSnowflake, 500);
 
-
+    // 이미지 클릭 샘플링 등(생략 없이 필요 부분 유지)
     (function () {
-        const imgEl = document.getElementById('resultImage');
+        const imgEl2 = document.getElementById('resultImage');
         const stage = document.getElementById('stage');
         const mask = document.getElementById('mask');
         const out = document.getElementById('out');
-        if (!imgEl || !stage || !mask || !out) return;
+        if (!imgEl2 || !stage || !mask || !out) return;
 
-        let picked = null;                 // {h,s,l} 샘플 기준색
-        let ready = false;                 // 이미지/캔버스 준비 여부
+        let picked = null;
+        let ready = false;
         let cache = { iw:0, ih:0, cw:0, ch:0, scale:1 };
-
-
-        const THRESHOLD = 32;
-        const STRENGTH  = 0.85;
-
 
         const clamp = (v, min, max) => v < min ? min : (v > max ? max : v);
         function rgbToHsl(r, g, b) {
@@ -1088,8 +360,7 @@
             let h, s, l = (max+min)/2;
             if (max === min) { h = s = 0; }
             else {
-                const d = max - min;
-                s = l > 0.5 ? d/(2 - max - min) : d/(max + min);
+                const d = max - min; s = l > 0.5 ? d/(2 - max - min) : d/(max + min);
                 switch (max) {
                     case r: h = (g - b) / d + (g < b ? 6 : 0); break;
                     case g: h = (b - r) / d + 2; break;
@@ -1103,7 +374,7 @@
             if (!hex) return [0,0,0];
             hex = hex.toString().trim();
             if (hex.startsWith('rgb')) {
-                const m = hex.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/i);
+                const m = hex.match(/rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)/i);
                 if (m) return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])];
             }
             hex = hex.replace('#','');
@@ -1112,19 +383,17 @@
             return [(n>>16)&255, (n>>8)&255, n&255];
         }
 
-
         function sizeCanvases() {
-            if (!imgEl.naturalWidth) return;
-            const iw = imgEl.naturalWidth, ih = imgEl.naturalHeight;
+            if (!imgEl2.naturalWidth) return;
+            const iw = imgEl2.naturalWidth, ih = imgEl2.naturalHeight;
             const targetW = Math.min(900, iw);
             const targetH = Math.round(targetW * ih / iw);
             [mask, out].forEach(c => { c.width = targetW; c.height = targetH; });
             cache = { iw, ih, cw: targetW, ch: targetH, scale: targetW / iw };
             ready = true;
         }
-        if (imgEl.complete) sizeCanvases();
-        imgEl.addEventListener('load', sizeCanvases);
-
+        if (imgEl2.complete) sizeCanvases();
+        imgEl2.addEventListener('load', sizeCanvases);
 
         stage.addEventListener('click', (e) => {
             if (!ready) return;
@@ -1137,13 +406,12 @@
             const tmp = document.createElement('canvas');
             tmp.width = out.width; tmp.height = out.height;
             const tctx = tmp.getContext('2d');
-            tctx.drawImage(imgEl, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
+            tctx.drawImage(imgEl2, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
             const px = tctx.getImageData(cx, cy, 1, 1).data;
             const [h, s, l] = rgbToHsl(px[0], px[1], px[2]);
             picked = { h, s, l };
             buildMask();
         });
-
 
         function bindSwatches() {
             document.querySelectorAll('.color-swatch').forEach(el => {
@@ -1155,13 +423,12 @@
         }
         window.addEventListener('load', bindSwatches);
 
-        // 마스크 생성(샘플색과 유사한 영역만)
         function buildMask() {
             if (!picked || !ready) return;
             const t = document.createElement('canvas');
             t.width = out.width; t.height = out.height;
             const ctx = t.getContext('2d');
-            ctx.drawImage(imgEl, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
+            ctx.drawImage(imgEl2, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
 
             const src = ctx.getImageData(0, 0, out.width, out.height);
             const d = src.data;
@@ -1180,7 +447,7 @@
                 const dl = Math.abs(l - picked.l) * 100;
 
                 const dist = dh * 0.7 + ds * 0.2 + dl * 0.1;
-                const inside = dist < THRESHOLD && s > 0.12 && l > 0.05 && l < 0.95;
+                const inside = dist < 32 && s > 0.12 && l > 0.05 && l < 0.95;
 
                 md[i]   = 16;
                 md[i+1] = 185;
@@ -1190,14 +457,13 @@
             mctx.putImageData(maskData, 0, 0);
         }
 
-
         function applyRecolor(targetColor) {
             if (!picked) { alert('이미지 위를 클릭해서 상의 기준색을 먼저 샘플하세요.'); return; }
             const [tr, tg, tb] = hexToRgb(targetColor);
 
             const octx = out.getContext('2d');
             octx.clearRect(0, 0, out.width, out.height);
-            octx.drawImage(imgEl, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
+            octx.drawImage(imgEl2, 0, 0, cache.iw, cache.ih, 0, 0, out.width, out.height);
             const imgData = octx.getImageData(0, 0, out.width, out.height);
             const d = imgData.data;
 
@@ -1210,34 +476,34 @@
                     const r = d[i], g = d[i+1], b = d[i+2];
                     const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
                     const rr = tr * lum, gg = tg * lum, bb = tb * lum;
-                    d[i]   = clamp(Math.round(rr * STRENGTH + r * (1 - STRENGTH)), 0, 255);
-                    d[i+1] = clamp(Math.round(gg * STRENGTH + g * (1 - STRENGTH)), 0, 255);
-                    d[i+2] = clamp(Math.round(bb * STRENGTH + b * (1 - STRENGTH)), 0, 255);
+                    d[i]   = clamp(Math.round(rr * 0.85 + r * 0.15), 0, 255);
+                    d[i+1] = clamp(Math.round(gg * 0.85 + g * 0.15), 0, 255);
+                    d[i+2] = clamp(Math.round(bb * 0.85 + b * 0.15), 0, 255);
                 }
             }
             octx.putImageData(imgData, 0, 0);
         }
+        window.applyRecolor = window.applyRecolor || applyRecolor;
     })();
 
-    // 그래프 초기화 함수
+    // 차트 인스턴스 보관
+    window.__confidenceChart = null;
+    window.__typeChart = null;
+
+    // 차트 초기화
     function initializeCharts() {
-        // 서버에서 전달된 데이터 가져오기
         const confidence = /*[[${confidence}]]*/ 38;
-        const recommendations = /*[[${recommendations}]]*/ [];
         const colorType = /*[[${analysis.colorType}]]*/ 'SUMMER_COOL';
         const typeComparisonData = /*[[${typeComparisonData}]]*/ {};
 
-        // 1. 신뢰도 차트 (도넛 차트)
         createConfidenceChart(confidence);
-
-        // 2. 퍼스널 컬러 타입 비교
         createTypeComparisonChart(colorType, confidence, typeComparisonData);
     }
 
-    // 신뢰도 도넛 차트
     function createConfidenceChart(confidence) {
         const ctx = document.getElementById('confidenceChart').getContext('2d');
-        new Chart(ctx, {
+        if (window.__confidenceChart) { window.__confidenceChart.destroy(); }
+        window.__confidenceChart = new Chart(ctx, {
             type: 'doughnut',
             data: {
                 labels: ['신뢰도', '불확실성'],
@@ -1254,14 +520,10 @@
             options: {
                 responsive: true,
                 plugins: {
-                    legend: {
-                        position: 'bottom'
-                    },
+                    legend: { position: 'bottom' },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                return context.label + ': ' + context.parsed + '%';
-                            }
+                            label: function(context) { return context.label + ': ' + context.parsed + '%'; }
                         }
                     }
                 }
@@ -1269,28 +531,21 @@
         });
     }
 
-
-    // 퍼스널 컬러 타입 비교
     function createTypeComparisonChart(currentType, confidence, typeComparisonData) {
         const ctx = document.getElementById('typeComparisonChart').getContext('2d');
+        if (window.__typeChart) { window.__typeChart.destroy(); }
 
         let typeLabels, similarities;
-
-        // 서버에서 전달된 비교 데이터가 있으면 사용
         if (typeComparisonData && typeComparisonData.similarities && typeComparisonData.typeLabels) {
             typeLabels = Object.values(typeComparisonData.typeLabels);
             similarities = Object.values(typeComparisonData.similarities).map(val => val * 100);
         } else {
-            // 기본 방식으로 처리
             const types = ['SPRING', 'SUMMER', 'AUTUMN', 'WINTER'];
             typeLabels = ['봄 웜톤', '여름 쿨톤', '가을 웜톤', '겨울 쿨톤'];
-            similarities = types.map(type => {
-                if (type === currentType) return confidence;
-                return Math.random() * 30 + 10; // 10-40% 범위의 랜덤 값
-            });
+            similarities = types.map(type => type === currentType ? confidence : Math.random() * 30 + 10);
         }
 
-        new Chart(ctx, {
+        window.__typeChart = new Chart(ctx, {
             type: 'radar',
             data: {
                 labels: typeLabels,
@@ -1305,49 +560,17 @@
             },
             options: {
                 responsive: true,
-                scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 100
-                    }
-                }
+                scales: { r: { beginAtZero: true, max: 100 } }
             }
         });
     }
 
-    // 유틸리티 함수들
+    // 유틸리티
     function hexToRgb(hex) {
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-        } : null;
+        const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
+        return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
     }
-
-    function rgbToHsv(r, g, b) {
-        r /= 255;
-        g /= 255;
-        b /= 255;
-
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        const diff = max - min;
-
-        let h = 0;
-        if (diff !== 0) {
-            if (max === r) h = ((g - b) / diff) % 6;
-            else if (max === g) h = (b - r) / diff + 2;
-            else h = (r - g) / diff + 4;
-        }
-        h = Math.round(h * 60);
-        if (h < 0) h += 360;
-
-        const s = max === 0 ? 0 : Math.round((diff / max) * 100);
-        const v = Math.round(max * 100);
-
-        return { h, s, v };
-    }
+    /*]]>*/
 </script>
 
 </body>
